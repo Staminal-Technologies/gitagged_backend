@@ -1,0 +1,135 @@
+[
+    {
+        "id": "gi-mysore-silk",
+        "name": "Mysore Silk",
+        "state": "Karnataka",
+        "description": "",
+        "certificateNumber": "",
+        "imageUrl": "",
+        "categories": [
+            "cat-handlooms-textiles"
+        ]
+    },
+    {
+        "id": "gi-kanchipuram-silk",
+        "name": "Kanchipuram Silk",
+        "state": "Tamil Nadu",
+        "description": "",
+        "certificateNumber": "",
+        "imageUrl": "",
+        "categories": [
+            "cat-handlooms-textiles"
+        ]
+    },
+    {
+        "id": "gi-banarasi-saree",
+        "name": "Banarasi Saree",
+        "state": "Uttar Pradesh",
+        "description": "",
+        "certificateNumber": "",
+        "imageUrl": "",
+        "categories": [
+            "cat-handlooms-textiles"
+        ]
+    },
+    {
+        "id": "gi-channapatna-toys",
+        "name": "Channapatna Toys",
+        "state": "Karnataka",
+        "description": "",
+        "certificateNumber": "",
+        "imageUrl": "",
+        "categories": [
+            "cat-indian-handicrafts"
+        ]
+    },
+    {
+        "id": "gi-kondapalli-toys",
+        "name": "Kondapalli Toys",
+        "state": "Andhra Pradesh",
+        "description": "",
+        "certificateNumber": "",
+        "imageUrl": "",
+        "categories": [
+            "cat-indian-handicrafts"
+        ]
+    },
+    {
+        "id": "gi-bidriware",
+        "name": "Bidriware",
+        "state": "Karnataka",
+        "description": "",
+        "certificateNumber": "",
+        "imageUrl": "",
+        "categories": [
+            "cat-jewellery",
+            "cat-indian-handicrafts"
+        ]
+    },
+    {
+        "id": "gi-madhubani-painting",
+        "name": "Madhubani Painting",
+        "state": "Bihar",
+        "description": "",
+        "certificateNumber": "",
+        "imageUrl": "",
+        "categories": [
+            "cat-indian-paintings"
+        ]
+    },
+    {
+        "id": "gi-thanjavur-painting",
+        "name": "Thanjavur Painting",
+        "state": "Tamil Nadu",
+        "description": "",
+        "certificateNumber": "",
+        "imageUrl": "",
+        "categories": [
+            "cat-indian-paintings"
+        ]
+    },
+    {
+        "id": "gi-odisha-pattachitra",
+        "name": "Odisha Pattachitra",
+        "state": "Odisha",
+        "description": "",
+        "certificateNumber": "",
+        "imageUrl": "",
+        "categories": [
+            "cat-indian-paintings"
+        ]
+    },
+    {
+        "id": "gi-darjeeling-tea",
+        "name": "Darjeeling Tea",
+        "state": "West Bengal",
+        "description": "",
+        "certificateNumber": "",
+        "imageUrl": "",
+        "categories": [
+            "cat-grocery-shopping"
+        ]
+    },
+    {
+        "id": "gi-coorg-coffee",
+        "name": "Coorg Coffee",
+        "state": "Karnataka",
+        "description": "",
+        "certificateNumber": "",
+        "imageUrl": "",
+        "categories": [
+            "cat-grocery-shopping"
+        ]
+    },
+    {
+        "id": "gi-aranmula-mirror",
+        "name": "Aranmula Kannadi",
+        "state": "Kerala",
+        "description": "",
+        "certificateNumber": "",
+        "imageUrl": "",
+        "categories": [
+            "cat-indian-handicrafts"
+        ]
+    }
+]

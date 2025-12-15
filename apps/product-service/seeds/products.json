@@ -1,0 +1,105 @@
+[
+    {
+        "id": "prod-mysore-silk-saree-01",
+        "title": "Mysore Silk Saree - Pure Mulberry Silk",
+        "description": "Handwoven Mysore Silk Saree with traditional zari border.",
+        "price": 8999,
+        "mrp": 12000,
+        "discountPercent": 25,
+        "stock": 10,
+        "images": [],
+        "categories": [
+            "cat-handlooms-textiles"
+        ],
+        "giRegions": [
+            "gi-mysore-silk"
+        ],
+        "status": "active"
+    },
+    {
+        "id": "prod-kanchipuram-saree-01",
+        "title": "Kanchipuram Silk Saree - Temple Border",
+        "description": "",
+        "price": 11999,
+        "mrp": 15000,
+        "discountPercent": 20,
+        "stock": 8,
+        "images": [],
+        "categories": [
+            "cat-handlooms-textiles"
+        ],
+        "giRegions": [
+            "gi-kanchipuram-silk"
+        ],
+        "status": "active"
+    },
+    {
+        "id": "prod-bidriware-flower-vase",
+        "title": "Bidriware Flower Vase",
+        "description": "",
+        "price": 2999,
+        "mrp": 3500,
+        "discountPercent": 15,
+        "stock": 20,
+        "images": [],
+        "categories": [
+            "cat-indian-handicrafts",
+            "cat-jewellery"
+        ],
+        "giRegions": [
+            "gi-bidriware"
+        ],
+        "status": "active"
+    },
+    {
+        "id": "prod-channapatna-elephant",
+        "title": "Channapatna Wooden Elephant Toy",
+        "description": "",
+        "price": 699,
+        "mrp": 750,
+        "discountPercent": 5,
+        "stock": 30,
+        "images": [],
+        "categories": [
+            "cat-indian-handicrafts"
+        ],
+        "giRegions": [
+            "gi-channapatna-toys"
+        ],
+        "status": "active"
+    },
+    {
+        "id": "prod-darjeeling-tea-premium",
+        "title": "Premium Darjeeling Tea - First Flush",
+        "description": "",
+        "price": 499,
+        "mrp": 650,
+        "discountPercent": 20,
+        "stock": 50,
+        "images": [],
+        "categories": [
+            "cat-grocery-shopping"
+        ],
+        "giRegions": [
+            "gi-darjeeling-tea"
+        ],
+        "status": "active"
+    },
+    {
+        "id": "prod-coorg-coffee-dark-roast",
+        "title": "Coorg Coffee - Dark Roast",
+        "description": "",
+        "price": 399,
+        "mrp": 500,
+        "discountPercent": 20,
+        "stock": 40,
+        "images": [],
+        "categories": [
+            "cat-grocery-shopping"
+        ],
+        "giRegions": [
+            "gi-coorg-coffee"
+        ],
+        "status": "active"
+    }
+]

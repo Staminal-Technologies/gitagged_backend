@@ -1,0 +1,371 @@
+[
+    {
+        "id": "cat-indian-paintings",
+        "name": "Indian Paintings",
+        "description": "",
+        "imageUrl": "",
+        "parentId": null,
+        "children": [
+            "cat-ganjifa-mysore",
+            "cat-andhra-leather-puppetry",
+            "cat-bengal-pattachitra",
+            "cat-odisha-palm-leaf",
+            "cat-orissa-pattachitra",
+            "cat-tree-of-life",
+            "cat-mysore-paintings"
+        ]
+    },
+    {
+        "id": "cat-ganjifa-mysore",
+        "name": "Ganjifa Cards of Mysore",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-indian-paintings",
+        "children": []
+    },
+    {
+        "id": "cat-andhra-leather-puppetry",
+        "name": "Andhra Leather Puppetry",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-indian-paintings",
+        "children": []
+    },
+    {
+        "id": "cat-bengal-pattachitra",
+        "name": "Bengal Pattachitra",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-indian-paintings",
+        "children": []
+    },
+    {
+        "id": "cat-odisha-palm-leaf",
+        "name": "Odisha Palm Leaf",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-indian-paintings",
+        "children": []
+    },
+    {
+        "id": "cat-orissa-pattachitra",
+        "name": "Orissa Pattachitra",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-indian-paintings",
+        "children": []
+    },
+    {
+        "id": "cat-tree-of-life",
+        "name": "Tree of Life",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-indian-paintings",
+        "children": []
+    },
+    {
+        "id": "cat-mysore-paintings",
+        "name": "Mysore Paintings",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-indian-paintings",
+        "children": []
+    },
+    {
+        "id": "cat-indian-handicrafts",
+        "name": "Indian Handicrafts",
+        "description": "",
+        "imageUrl": "",
+        "parentId": null,
+        "children": [
+            "cat-madur-kathi",
+            "cat-thirukannur-papier-mache",
+            "cat-villianur-terracotta",
+            "cat-thanjavur-art-plate",
+            "cat-bastar-dhokra",
+            "cat-bidriware-silver",
+            "cat-etikoppaka-toys",
+            "cat-coconut-shell-craft",
+            "cat-bastar-iron",
+            "cat-bobbili-veena",
+            "cat-konark-stone-carving"
+        ]
+    },
+    {
+        "id": "cat-madur-kathi",
+        "name": "Madur Kathi",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-indian-handicrafts",
+        "children": []
+    },
+    {
+        "id": "cat-thirukannur-papier-mache",
+        "name": "Thirukannur Papier Mache",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-indian-handicrafts",
+        "children": []
+    },
+    {
+        "id": "cat-villianur-terracotta",
+        "name": "Villianur Terracotta",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-indian-handicrafts",
+        "children": []
+    },
+    {
+        "id": "cat-thanjavur-art-plate",
+        "name": "Thanjavur Art Plate",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-indian-handicrafts",
+        "children": []
+    },
+    {
+        "id": "cat-bastar-dhokra",
+        "name": "Bastar Dhokra",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-indian-handicrafts",
+        "children": []
+    },
+    {
+        "id": "cat-bidriware-silver",
+        "name": "Bidriware Silver",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-indian-handicrafts",
+        "children": []
+    },
+    {
+        "id": "cat-etikoppaka-toys",
+        "name": "Etikoppaka Toys",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-indian-handicrafts",
+        "children": []
+    },
+    {
+        "id": "cat-coconut-shell-craft",
+        "name": "Coconut Shell Craft",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-indian-handicrafts",
+        "children": []
+    },
+    {
+        "id": "cat-bastar-iron",
+        "name": "Bastar Iron",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-indian-handicrafts",
+        "children": []
+    },
+    {
+        "id": "cat-bobbili-veena",
+        "name": "Bobbili Veena (Saraswati Veena)",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-indian-handicrafts",
+        "children": []
+    },
+    {
+        "id": "cat-konark-stone-carving",
+        "name": "Konark Stone Carving",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-indian-handicrafts",
+        "children": []
+    },
+    {
+        "id": "cat-grocery-shopping",
+        "name": "Grocery Shopping",
+        "description": "",
+        "imageUrl": "",
+        "parentId": null,
+        "children": [
+            "cat-indian-spices"
+        ]
+    },
+    {
+        "id": "cat-indian-spices",
+        "name": "Indian Spices",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-grocery-shopping",
+        "children": []
+    },
+    {
+        "id": "cat-handlooms-textiles",
+        "name": "Handlooms & Textiles",
+        "description": "",
+        "imageUrl": "",
+        "parentId": null,
+        "children": [
+            "cat-hand-embroidery-wool",
+            "cat-clothing"
+        ]
+    },
+    {
+        "id": "cat-hand-embroidery-wool",
+        "name": "Hand Embroidery & Wool",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-handlooms-textiles",
+        "children": []
+    },
+    {
+        "id": "cat-clothing",
+        "name": "Clothing",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-handlooms-textiles",
+        "children": []
+    },
+    {
+        "id": "cat-jewellery",
+        "name": "Jewellery",
+        "description": "",
+        "imageUrl": "",
+        "parentId": null,
+        "children": [
+            "cat-thewa-jewellery",
+            "cat-pendant-necklaces",
+            "cat-earrings",
+            "cat-craft",
+            "cat-bidriware-inlay"
+        ]
+    },
+    {
+        "id": "cat-thewa-jewellery",
+        "name": "Thewa Jewellery",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-jewellery",
+        "children": []
+    },
+    {
+        "id": "cat-pendant-necklaces",
+        "name": "Pendant and Necklaces",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-jewellery",
+        "children": []
+    },
+    {
+        "id": "cat-earrings",
+        "name": "Earrings",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-jewellery",
+        "children": []
+    },
+    {
+        "id": "cat-craft",
+        "name": "Craft",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-jewellery",
+        "children": []
+    },
+    {
+        "id": "cat-bidriware-inlay",
+        "name": "Bidriware Silver Inlay",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-jewellery",
+        "children": []
+    },
+    {
+        "id": "cat-home-living",
+        "name": "Home & Living",
+        "description": "",
+        "imageUrl": "",
+        "parentId": null,
+        "children": [
+            "cat-mysore-soap",
+            "cat-coasters",
+            "cat-kitchen-dining-coasters",
+            "cat-bathroom-accessories"
+        ]
+    },
+    {
+        "id": "cat-mysore-soap",
+        "name": "Mysore Soap",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-home-living",
+        "children": []
+    },
+    {
+        "id": "cat-coasters",
+        "name": "Coasters",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-home-living",
+        "children": []
+    },
+    {
+        "id": "cat-kitchen-dining-coasters",
+        "name": "Kitchen & Dining Coasters",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-home-living",
+        "children": []
+    },
+    {
+        "id": "cat-bathroom-accessories",
+        "name": "Bathroom Accessories (Solapur Terry Towel)",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-home-living",
+        "children": []
+    },
+    {
+        "id": "cat-accessories",
+        "name": "Accessories",
+        "description": "",
+        "imageUrl": "",
+        "parentId": null,
+        "children": [
+            "cat-bags",
+            "cat-wallets",
+            "cat-scarves",
+            "cat-hair-accessories"
+        ]
+    },
+    {
+        "id": "cat-bags",
+        "name": "Bags",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-accessories",
+        "children": []
+    },
+    {
+        "id": "cat-wallets",
+        "name": "Wallets",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-accessories",
+        "children": []
+    },
+    {
+        "id": "cat-scarves",
+        "name": "Scarves",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-accessories",
+        "children": []
+    },
+    {
+        "id": "cat-hair-accessories",
+        "name": "Hair Accessories",
+        "description": "",
+        "imageUrl": "",
+        "parentId": "cat-accessories",
+        "children": []
+    }
+]
