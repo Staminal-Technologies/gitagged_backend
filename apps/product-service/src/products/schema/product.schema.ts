@@ -1,9 +1,11 @@
+import { Type } from '@nestjs/common';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Schema as MongooseSchema,Types } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class Product {
-    @Prop({ type: String, required: true })
-    _id: string; // slug ID like prod-mysore-silk-saree-01
+    @Prop({ required: true, unique: true })
+    slug: string; // slug ID like prod-mysore-silk-saree-01
 
     @Prop({ required: true })
     title: string;
@@ -26,11 +28,11 @@ export class Product {
     @Prop({ type: [String], default: [] })
     images: string[];
 
-    @Prop({ type: [String], default: [] })
-    categories: string[];
+    @Prop({ type: [MongooseSchema.Types.ObjectId],ref:'Category', default: [] })
+    categories: Types.ObjectId[];
 
-    @Prop({ type: [String], default: [] })
-    giRegions: string[];
+    @Prop({ type: [MongooseSchema.Types.ObjectId],ref:'GIRegion', default: [] })
+    giRegions: Types.ObjectId[];
 
     @Prop({ default: 'active' })
     status: string; // active | inactive

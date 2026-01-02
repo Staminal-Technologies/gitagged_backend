@@ -3,8 +3,6 @@ import { Document } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class Category {
-    @Prop({ type: String, required: true })   // <-- IMPORTANT
-    _id: string;                              // <-- IMPORTANT
 
     @Prop({ required: true })
     name: string;
