@@ -1,5 +1,6 @@
-import { Controller, Get, Param, Post, Body, Put } from '@nestjs/common';
-import { ProductsService } from './products-service';
+import { Controller, Get, Param, Post, Body, Put, UseGuards , Delete} from '@nestjs/common';
+import { ProductsService } from './products.service';
+import { AdminJwtGuard } from '../common/guards/admin-jwt.guard';
 
 @Controller('products')
 export class ProductsController {
@@ -25,13 +26,22 @@ export class ProductsController {
         return this.service.findByGIRegion(regionId);
     }
 
+      @UseGuards(AdminJwtGuard)
     @Post()
     async create(@Body() body: any) {
         return this.service.create(body);
     }
 
+      @UseGuards(AdminJwtGuard)
     @Put(':id')
     async update(@Param('id') id: string, @Body() body: any) {
         return this.service.update(id, body);
     }
+
+    @UseGuards(AdminJwtGuard)
+@Delete(':id')
+async remove(@Param('id') id: string) {
+  return this.service.remove(id);
+}
+
 }

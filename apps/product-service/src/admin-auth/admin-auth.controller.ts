@@ -7,7 +7,8 @@ export class AdminAuthController {
   constructor(private readonly adminAuthService: AdminAuthService) {}
 
   @Post('login')
-  login(@Body() dto: AdminLoginDto) {
+  async login(@Body() dto: AdminLoginDto) {
+    console.log('📦 DTO RECEIVED:', dto);
     return this.adminAuthService.login(dto.email, dto.password);
   }
 }

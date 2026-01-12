@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
+import { InjectModel} from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Product, ProductDocument } from './schema/product.schema';
+import slugify from 'slugify';
 
 @Injectable()
 export class ProductsService {
@@ -32,4 +33,21 @@ export class ProductsService {
     async update(id: string, data: Partial<Product>) {
         return this.productModel.findByIdAndUpdate(id, data, { new: true }).lean();
     }
+
+    async createSlug(data: any) {
+  const slug = slugify(data.title, {
+    lower: true,
+    strict: true,
+  });
+
+  return this.productModel.create({
+    ...data,
+    slug,
+  });
+}
+
+async remove(id: string) {
+  return this.productModel.findByIdAndDelete(id);
+}
+
 }

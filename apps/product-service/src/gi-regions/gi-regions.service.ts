@@ -25,4 +25,9 @@ export class GIRegionsService {
     async update(id: string, data: any) {
         return this.giRegionModel.findByIdAndUpdate(id, data, { new: true });
     }
+
+    delete(id: string) {
+  return this.giRegionModel.findByIdAndDelete(id);
+}
+        
 }

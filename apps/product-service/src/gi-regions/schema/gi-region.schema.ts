@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Schema as MongooseSchema, Types } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class GIRegion {
@@ -10,7 +11,7 @@ export class GIRegion {
     description?: string;
 
     @Prop()
-    state?: string;
+    state?: string; 
 
     @Prop()
     certificateNumber?: string;
@@ -18,8 +19,15 @@ export class GIRegion {
     @Prop()
     imageUrl?: string;
 
-    @Prop({ type: [String], default: [] })
-    categories: string[];  // link to Category IDs
+    // @Prop({ type: [String], default: [] })
+    // categories: string[];  // link to Category IDs
+
+    @Prop({
+        type: [MongooseSchema.Types.ObjectId],
+        ref: 'Category',
+        default: [],
+    })
+    categories: Types.ObjectId[];
 
     @Prop({ default: 0 })
     popularityScore: number;
