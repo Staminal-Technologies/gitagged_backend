@@ -4,30 +4,31 @@ import { Model } from 'mongoose';
 import { GIRegion } from './schema/gi-region.schema';
 
 @Injectable()
-export class GIRegionsService {
-    constructor(
-        @InjectModel(GIRegion.name)
-        private giRegionModel: Model<GIRegion>,
-    ) { }
+export class GiRegionsService {
+  constructor(
+    @InjectModel(GIRegion.name)
+    private readonly regionModel: Model<GIRegion>,
+  ) {}
 
-    async findAll() {
-        return this.giRegionModel.find().lean();
-    }
+  async findAll() {
+    return this.regionModel.find().lean();
+  }
 
-    async findById(id: string) {
-        return this.giRegionModel.findById(id).lean();
-    }
+  async findById(id: string) {
+    return this.regionModel.findById(id).lean();
+  }
 
-    async create(data: any) {
-        return this.giRegionModel.create(data);
-    }
+  async create(data: Partial<GIRegion>) {
+    return this.regionModel.create(data);
+  }
 
-    async update(id: string, data: any) {
-        return this.giRegionModel.findByIdAndUpdate(id, data, { new: true });
-    }
+  async update(id: string, data: Partial<GIRegion>) {
+    return this.regionModel
+      .findByIdAndUpdate(id, data, { new: true })
+      .lean();
+  }
 
-    delete(id: string) {
-  return this.giRegionModel.findByIdAndDelete(id);
-}
-        
+  async delete(id: string) {
+    return this.regionModel.findByIdAndDelete(id);
+  }
 }

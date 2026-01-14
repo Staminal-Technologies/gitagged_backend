@@ -10,7 +10,7 @@ export class Category {
     description?: string;
 
     @Prop()
-    imageUrl?: string;
+    image?: string;
 
     @Prop({ default: null })
     parentId: string | null;

@@ -1,6 +1,6 @@
 import { Type } from '@nestjs/common';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Schema as MongooseSchema,Types } from 'mongoose';
+import { Schema as MongooseSchema, Types } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class Product {
@@ -28,10 +28,17 @@ export class Product {
     @Prop({ type: [String], default: [] })
     images: string[];
 
-    @Prop({ type: [MongooseSchema.Types.ObjectId],ref:'Category', default: [] })
+    @Prop({
+        type: Map,
+        of: String,
+        default: {},
+    })
+    attributes: Record<string, string>;
+
+    @Prop({ type: [MongooseSchema.Types.ObjectId], ref: 'Category', default: [] })
     categories: Types.ObjectId[];
 
-    @Prop({ type: [MongooseSchema.Types.ObjectId],ref:'GIRegion', default: [] })
+    @Prop({ type: [MongooseSchema.Types.ObjectId], ref: 'GIRegion', default: [] })
     giRegions: Types.ObjectId[];
 
     @Prop({ default: 'active' })

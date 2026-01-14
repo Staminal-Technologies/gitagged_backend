@@ -17,7 +17,7 @@ export class GIRegion {
     certificateNumber?: string;
 
     @Prop()
-    imageUrl?: string;
+    image?: string;
 
     // @Prop({ type: [String], default: [] })
     // categories: string[];  // link to Category IDs
