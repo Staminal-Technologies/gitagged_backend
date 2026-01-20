@@ -39,7 +39,7 @@ export class CategoriesController {
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
   async uploadCategoryImage(@UploadedFile() file: Express.Multer.File) {
 
-    configureCloudinary(); 
+    configureCloudinary();
 
     if (!file) {
       throw new Error('No file received');
@@ -47,7 +47,7 @@ export class CategoriesController {
 
     const result: any = await new Promise((resolve, reject) => {
       cloudinary.uploader.upload_stream(
-        { folder: 'categories' }, 
+        { folder: 'categories' },
         (error, result) => {
           if (error) reject(error);
           else resolve(result);

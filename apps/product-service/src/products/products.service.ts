@@ -3,11 +3,13 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Product, ProductDocument } from './schema/product.schema';
 import slugify from 'slugify';
+import { Category, CategoryDocument } from '../categories/schema/category.schema';
 
 @Injectable()
 export class ProductsService {
     constructor(
         @InjectModel(Product.name) private productModel: Model<ProductDocument>,
+        @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
     ) { }
 
     async findAll() {
@@ -50,4 +52,17 @@ export class ProductsService {
         return this.productModel.findByIdAndDelete(id);
     }
 
+    // 🔥 NEW METHOD — FIND BY PARENT CATEGORY
+    async findByParentCategory(parentId: string) {
+        const categories = await this.categoryModel
+            .find({ parentId })
+            .select('_id')
+            .lean();
+
+        const categoryIds = categories.map(cat => cat._id);
+
+        return this.productModel.find({
+            categories: { $in: categoryIds },
+        }).lean();
+    }
 }
