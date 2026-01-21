@@ -20,18 +20,18 @@ export class AuthService {
     return { id: user._id };
   }
 
-  async login(email: string, password: string) {
-    const user = await this.usersService.findByEmail(email);
-    if (!user) throw new UnauthorizedException();
+  async login(phone: string) {
+    let user = await this.usersService.findByPhone(phone);
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) throw new UnauthorizedException();
+    if (!user) {
+     throw new UnauthorizedException('User not registered');
+    }
 
-    return {
-      accessToken: this.jwtService.sign({
-        sub: user._id,
-        role: 'user',
-      }),
-    };
+    const token = this.jwtService.sign({
+      sub: user._id,
+      phone: user.phone,
+    });
+
+    return { token };
   }
 }

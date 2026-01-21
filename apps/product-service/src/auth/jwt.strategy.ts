@@ -12,6 +12,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'user-jwt') {
   }
 
   async validate(payload: any) {
-    return payload;
+    return { sub: payload.sub, phone: payload.phone };
   }
 }
