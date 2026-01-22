@@ -42,8 +42,9 @@ export class CartService {
 
     // Get user cart
     async getUserCart(userId: string) {
+        const uId = new Types.ObjectId(userId);
         return this.cartModel
-            .find({ userId })
+            .find({ userId: uId })
             .populate('productId')
             .lean();
     }
@@ -64,6 +65,7 @@ export class CartService {
 
     // Clear cart
     async clearCart(userId: string): Promise<{ deletedCount?: number }> {
-        return this.cartModel.deleteMany({ userId });
+        const uId = new Types.ObjectId(userId);
+        return this.cartModel.deleteMany({ userId: uId });
     }
 }

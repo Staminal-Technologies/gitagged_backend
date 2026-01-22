@@ -21,7 +21,7 @@ import { AdminJwtStrategy } from './jwt.strategy';
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET'),
+        secret: config.get<string>('ADMIN_JWT_SECRET'),
         signOptions: { expiresIn: '7d' },
       }),
     }),
@@ -29,10 +29,10 @@ import { AdminJwtStrategy } from './jwt.strategy';
   controllers: [AdminAuthController],
   providers: [AdminAuthService, AdminJwtStrategy],
 })
-export class AdminAuthModule implements OnModuleInit{
+export class AdminAuthModule implements OnModuleInit {
   constructor(
     @InjectModel(Admin.name) private adminModel: Model<Admin>,
-  ) {}
+  ) { }
 
   async onModuleInit() {
     await seedAdmin(this.adminModel);
