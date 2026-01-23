@@ -39,29 +39,27 @@ export class GIRegionsController {
   }
 
   @UseGuards(AdminJwtGuard)
-  @Post(':id/image')
-  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
-  async uploadRegionImage(
-    @Param('id') id: string,
-    @UploadedFile() file: Express.Multer.File,
-  ) {
-    configureCloudinary();
+@Post('upload-image')
+@UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+async uploadRegionImageOnly(
+  @UploadedFile() file: Express.Multer.File,
+) {
+  configureCloudinary();
 
-    if (!file) throw new Error('No file received');
+  if (!file) throw new Error('No file received');
 
-    const result: any = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream(
-        { folder: 'gi-regions' },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        },
-      ).end(file.buffer);
-    });
+  const result: any = await new Promise((resolve, reject) => {
+    cloudinary.uploader.upload_stream(
+      { folder: 'gi-regions' },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      },
+    ).end(file.buffer);
+  });
 
-    // ✅ SAVE IMAGE URL INTO MONGODB
-    return this.giRegionsService.updateImage(id, result.secure_url);
-  }
-
+  // 🔥 JUST RETURN URL
+  return { url: result.secure_url };
+}
 
 }

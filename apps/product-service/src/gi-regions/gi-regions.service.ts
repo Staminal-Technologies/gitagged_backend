@@ -33,11 +33,11 @@ export class GiRegionsService {
   }
 
   async updateImage(id: string, imageUrl: string) {
-    return this.regionModel.findByIdAndUpdate(
-      id,
-      { image: imageUrl },
-      { new: true }
-    );
-  }
+  return this.regionModel.findByIdAndUpdate(
+    id,
+    { image: imageUrl },
+    { new: true }
+  );
+}
 
 }
