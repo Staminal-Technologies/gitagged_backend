@@ -11,13 +11,13 @@ export class GIRegion {
     description?: string;
 
     @Prop()
-    state?: string; 
+    state?: string;
 
     @Prop()
     certificateNumber?: string;
 
-    @Prop()
-    image?: string;
+    @Prop({ default: '' })
+    image: string;
 
     // @Prop({ type: [String], default: [] })
     // categories: string[];  // link to Category IDs

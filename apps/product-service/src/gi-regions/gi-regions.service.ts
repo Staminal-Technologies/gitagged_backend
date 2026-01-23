@@ -8,7 +8,7 @@ export class GiRegionsService {
   constructor(
     @InjectModel(GIRegion.name)
     private readonly regionModel: Model<GIRegion>,
-  ) {}
+  ) { }
 
   async findAll() {
     return this.regionModel.find().lean();
@@ -31,4 +31,13 @@ export class GiRegionsService {
   async delete(id: string) {
     return this.regionModel.findByIdAndDelete(id);
   }
+
+  async updateImage(id: string, imageUrl: string) {
+    return this.regionModel.findByIdAndUpdate(
+      id,
+      { image: imageUrl },
+      { new: true }
+    );
+  }
+
 }
