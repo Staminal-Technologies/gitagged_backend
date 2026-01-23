@@ -16,6 +16,11 @@ export class CategoriesController {
     return this.service.findAll();
   }
 
+  @Get('menu')
+  async getMenu() {
+    return this.service.getMenu();
+  }
+
   @UseGuards(AdminJwtGuard)
   @Post()
   create(@Body() body: any) {
