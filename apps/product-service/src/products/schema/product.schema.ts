@@ -20,7 +20,7 @@ export class Product {
     mrp?: number;
 
     @Prop()
-    discountPercent?: number;
+    discountPercentage?: number;
 
     @Prop({ type: Number, default: 0 })
     stock: number;

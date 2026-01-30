@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Body, Put, UseGuards, Delete, UseInterceptors, UploadedFile, } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body, Put, UseGuards, Delete, UseInterceptors, UploadedFile, Req } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { Express } from 'express';
 import { memoryStorage } from 'multer';
