@@ -12,5 +12,8 @@ import { FavoritesService } from './favorites.service';
   ],
   controllers: [FavoritesController],
   providers: [FavoritesService],
+  exports: [
+    MongooseModule,
+  ],
 })
 export class FavoritesModule {}
