@@ -13,7 +13,7 @@ import { UserJwtGuard } from '../common/guards/user-jwt.guard';
 @Controller('favorites')
 @UseGuards(UserJwtGuard)
 export class FavoritesController {
-  constructor(private readonly service: FavoritesService) {}
+  constructor(private readonly service: FavoritesService) { }
 
   @Post(':productId')
   add(@Req() req, @Param('productId') productId: string) {
@@ -29,4 +29,5 @@ export class FavoritesController {
   remove(@Req() req, @Param('productId') productId: string) {
     return this.service.remove(req.user.sub, productId);
   }
+
 }

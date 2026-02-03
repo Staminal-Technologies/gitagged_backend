@@ -12,6 +12,12 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
+  @Get('me')
+  @UseGuards(UserJwtGuard)
+  getMe(@Req() req: any) {
+    return this.usersService.findByPhone(req.user.phone);
+  }
+
   @Get(':id')
   getUser(@Param('id') id: string) {
     return this.usersService.findById(id);
@@ -22,14 +28,8 @@ export class UsersController {
     return this.usersService.create(body);
   }
 
-  // @UseGuards(UserJwtGuard)
-  @Get('me')
-  getMe(@Req() req: any) {
-    return this.usersService.findByPhone(req.user.phone);
-  }
-
   @Post('merge')
-  // @UseGuards(UserJwtGuard)
+  @UseGuards(UserJwtGuard)
   async mergeGuestData(
     @Req() req,
     @Body() body: { cart: any[]; favourites: string[] }

@@ -34,4 +34,27 @@ export class FavoritesService {
         });
     }
 
+    async mergeGuestFavorites(
+        userId: string,
+        guestFavourites: string[],
+    ) {
+        const uId = new Types.ObjectId(userId);
+
+        for (const productId of guestFavourites) {
+            const pId = new Types.ObjectId(productId);
+
+            const exists = await this.favoriteModel.findOne({
+                userId: uId,
+                productId: pId,
+            });
+
+            if (!exists) {
+                await this.favoriteModel.create({
+                    userId: uId,
+                    productId: pId,
+                });
+            }
+        }
+    }
+
 }

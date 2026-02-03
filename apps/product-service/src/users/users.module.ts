@@ -8,9 +8,9 @@ import { FavoritesModule as FavouritesModule } from '../favorites/favorites.modu
 
 @Module({
   imports: [MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
- CartModule,        
-    FavouritesModule,  
-],
+    CartModule,
+    FavouritesModule,
+  ],
   providers: [UsersService],
   controllers: [UsersController],
   exports: [UsersService],

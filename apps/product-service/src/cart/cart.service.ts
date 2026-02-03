@@ -1,4 +1,4 @@
-import { Injectable , BadRequestException} from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Cart, CartDocument } from './schema/cart.schema';
@@ -34,7 +34,7 @@ export class CartService {
 
         return this.cartModel.create({
             userId: uId,
-            productId : pId,
+            productId: pId,
             quantity,
             price,
         });
@@ -67,5 +67,33 @@ export class CartService {
     async clearCart(userId: string): Promise<{ deletedCount?: number }> {
         const uId = new Types.ObjectId(userId);
         return this.cartModel.deleteMany({ userId: uId });
+    }
+
+    async mergeGuestCart(
+        userId: string,
+        guestCart: { productId: string; qty: number; price: number }[],
+    ) {
+        const uId = new Types.ObjectId(userId);
+
+        for (const item of guestCart) {
+            const pId = new Types.ObjectId(item.productId);
+
+            const existing = await this.cartModel.findOne({
+                userId: uId,
+                productId: pId,
+            });
+
+            if (existing) {
+                existing.quantity += item.qty;
+                await existing.save();
+            } else {
+                await this.cartModel.create({
+                    userId: uId,
+                    productId: pId,
+                    quantity: item.qty,
+                    price: item.price,
+                });
+            }
+        }
     }
 }

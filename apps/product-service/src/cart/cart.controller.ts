@@ -13,7 +13,7 @@ import { CartService } from './cart.service';
 import { UserJwtGuard } from '../common/guards/user-jwt.guard';
 
 @Controller('cart')
-@UseGuards(UserJwtGuard)
+// @UseGuards(UserJwtGuard)
 export class CartController {
     constructor(private readonly cartService: CartService) { }
 
