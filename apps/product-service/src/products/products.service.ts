@@ -14,7 +14,11 @@ export class ProductsService {
     ) { }
 
     async findAll() {
-        return this.productModel.find().lean();
+        return this.productModel
+            .find()
+            .populate('categories', 'name')  
+            .populate('giRegions', 'name')    
+            .lean();
     }
 
     async findById(id: string) {
