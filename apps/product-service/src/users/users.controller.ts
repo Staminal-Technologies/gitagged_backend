@@ -1,6 +1,7 @@
-import { Controller, Get, Req, UseGuards, Param, Post, Body } from '@nestjs/common';
+import { Controller, Get, Req, UseGuards, Param, Post, Body, Patch } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UserJwtGuard } from '../common/guards/user-jwt.guard';
+import { AdminJwtGuard } from '../common/guards/admin-jwt.guard';
 // import { UserJwtGuard } from '../auth/user-jwt.guard';
 
 @Controller('users')
@@ -40,6 +41,24 @@ export class UsersController {
       body.cart || [],
       body.favourites || []
     );
+  }
+
+  @UseGuards(AdminJwtGuard)
+  @Get('admin/all')
+  getAllUsersAdmin() {
+    return this.usersService.getAllUsersForAdmin();
+  }
+
+  @UseGuards(AdminJwtGuard)
+  @Patch('admin/block/:id')
+  block(@Param('id') id: string) {
+    return this.usersService.blockUser(id);
+  }
+
+  @UseGuards(AdminJwtGuard)
+  @Patch('admin/unblock/:id')
+  unblock(@Param('id') id: string) {
+    return this.usersService.unblockUser(id);
   }
 
 }

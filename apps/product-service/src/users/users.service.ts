@@ -32,6 +32,7 @@ export class UsersService {
     return this.userModel.findOne({ email });
   }
 
+  // merge guest cart and favourites after user login..
   async mergeGuestData(
     userId: string,
     guestCart: { productId: string; qty: number; price: number }[],
@@ -45,6 +46,25 @@ export class UsersService {
     };
   }
 
+  async getAllUsersForAdmin() {
+    return this.userModel.find().sort({ createdAt: -1 }).lean();
+  }
+
+  async blockUser(userId: string) {
+    return this.userModel.findByIdAndUpdate(
+      userId,
+      { isBlocked: true },
+      { new: true },
+    );
+  }
+
+  async unblockUser(userId: string) {
+    return this.userModel.findByIdAndUpdate(
+      userId,
+      { isBlocked: false },
+      { new: true },
+    );
+  }
 
 }
 

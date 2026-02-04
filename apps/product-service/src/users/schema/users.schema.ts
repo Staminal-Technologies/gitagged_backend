@@ -14,8 +14,19 @@ export class User extends Document {
   @Prop({ required: true, unique: true })
   email: string;
 
-  @Prop({required: true})
+  @Prop({required: true}) 
   address:string;
+
+   // 🔐 Admin control
+  @Prop({ default: false })
+  isBlocked: boolean;
+
+  @Prop({ default: true })
+  isActive: boolean;
+
+  // 🔑 Authorization
+  @Prop({ default: 'user' })
+  role: 'user' | 'admin';
 
 }
 
