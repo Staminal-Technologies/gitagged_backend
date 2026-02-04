@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable , NotFoundException} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './schema/users.schema';
@@ -51,20 +51,25 @@ export class UsersService {
   }
 
   async blockUser(userId: string) {
-    return this.userModel.findByIdAndUpdate(
+    const user=await this.userModel.findByIdAndUpdate(
       userId,
-      { isBlocked: true },
+      { isBlocked: true , isActive: false },
       { new: true },
     );
+    if (!user) throw new NotFoundException('User not found');
+    return user;
   }
 
   async unblockUser(userId: string) {
-    return this.userModel.findByIdAndUpdate(
+    const user = await this.userModel.findByIdAndUpdate(
       userId,
-      { isBlocked: false },
+      { isBlocked: false , isActive:true },
       { new: true },
     );
-  }
 
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+  
 }
 

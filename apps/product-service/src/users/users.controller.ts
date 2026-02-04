@@ -8,6 +8,7 @@ import { AdminJwtGuard } from '../common/guards/admin-jwt.guard';
 export class UsersController {
   constructor(private usersService: UsersService) { }
 
+  @UseGuards(AdminJwtGuard)
   @Get()
   getAllUsers() {
     return this.usersService.findAll();
@@ -44,19 +45,19 @@ export class UsersController {
   }
 
   @UseGuards(AdminJwtGuard)
-  @Get('admin/all')
+  @Get('users')
   getAllUsersAdmin() {
     return this.usersService.getAllUsersForAdmin();
   }
 
   @UseGuards(AdminJwtGuard)
-  @Patch('admin/block/:id')
+  @Patch(':id/block')
   block(@Param('id') id: string) {
     return this.usersService.blockUser(id);
   }
 
   @UseGuards(AdminJwtGuard)
-  @Patch('admin/unblock/:id')
+  @Patch(':id/unblock')
   unblock(@Param('id') id: string) {
     return this.usersService.unblockUser(id);
   }

@@ -14,14 +14,14 @@ export class User extends Document {
   @Prop({ required: true, unique: true })
   email: string;
 
-  @Prop({required: true}) 
-  address:string;
+  @Prop({ required: true })
+  address: string;
 
-   // 🔐 Admin control
-  @Prop({ default: false })
+  // 🔐 Admin control
+  @Prop({ type: Boolean, default: false })
   isBlocked: boolean;
 
-  @Prop({ default: true })
+  @Prop({ type: Boolean, default: true })
   isActive: boolean;
 
   // 🔑 Authorization

@@ -5,11 +5,13 @@ import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { CartModule } from '../cart/cart.module';
 import { FavoritesModule as FavouritesModule } from '../favorites/favorites.module';
+import { AdminAuthModule } from '../admin-auth/admin-auth.module';
 
 @Module({
   imports: [MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     CartModule,
     FavouritesModule,
+    AdminAuthModule,
   ],
   providers: [UsersService],
   controllers: [UsersController],
