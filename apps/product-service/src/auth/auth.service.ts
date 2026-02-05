@@ -8,7 +8,7 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
   // async register(data: any) {
   //   const hashed = await bcrypt.hash(data.password, 10);
@@ -73,7 +73,7 @@ export class AuthService {
     let user = await this.usersService.findByPhone(phone);
 
     if (!user) {
-     throw new UnauthorizedException('User not registered');
+      throw new UnauthorizedException('User not registered');
     }
 
     const token = this.jwtService.sign({

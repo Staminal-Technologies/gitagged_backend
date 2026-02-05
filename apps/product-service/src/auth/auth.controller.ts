@@ -13,7 +13,7 @@ export class AuthController {
 
   @Post('login')
   login(@Body('phone') phone: string) {
-    return this.authService.login(phone);
+    return this.authService.checkPhone(phone);
   }
 
 }
