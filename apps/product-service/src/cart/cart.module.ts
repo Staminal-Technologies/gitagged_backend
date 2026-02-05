@@ -10,6 +10,7 @@ import { CartService } from './cart.service';
       { name: Cart.name, schema: CartSchema },
     ]),
   ],
+  controllers:[CartController],
   providers: [CartService],
   exports: [CartService],
 })
