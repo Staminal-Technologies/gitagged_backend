@@ -1,4 +1,5 @@
-import { Module } from '@nestjs/common';
+import { Module} from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
 import { OrderServiceController } from './order-service.controller';
 import { OrderServiceService } from './order-service.service';
 
