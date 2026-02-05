@@ -8,6 +8,7 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from '../common/strategies/jwt.strategy';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AdminAuthModule } from 'apps/product-service/src/admin-auth/admin-auth.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       }),
     }),
     HttpModule,
+    AdminAuthModule
   ],
   controllers: [OrderController],
   providers: [OrderService, JwtStrategy],
