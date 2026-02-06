@@ -1,24 +1,15 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
-import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
+import { FirebaseService } from '../common/firebase/firebase.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private firebaseService: FirebaseService,
   ) { }
-
-  // async register(data: any) {
-  //   const hashed = await bcrypt.hash(data.password, 10);
-  //   const user = await this.usersService.create({
-  //     ...data,
-  //     password: hashed,
-  //   });
-
-  //   return { id: user._id };
-  // }
 
   // 🔍 STEP 1: CHECK PHONE
   async checkPhone(phone: string) {
@@ -83,4 +74,35 @@ export class AuthService {
 
     return { token };
   }
+
+  // for otp..
+  async otpLogin(firebaseToken: string) {
+    const decoded = await this.firebaseService.verifyToken(firebaseToken);
+
+    const phone = decoded.phone_number;
+    if (!phone) throw new UnauthorizedException('Phone not found');
+
+    let user = await this.usersService.findByPhone(phone);
+
+    if (!user) {
+      user = await this.usersService.create({
+        phone,
+        name: 'User',
+        isActive: true,
+        isBlocked: false,
+      });
+    }
+
+    const jwt = this.jwtService.sign({
+      sub: user._id,
+      phone: user.phone,
+      role: 'user',
+    });
+
+    return {
+      token: jwt,
+      user,
+    };
+  }
+
 }

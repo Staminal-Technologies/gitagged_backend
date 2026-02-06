@@ -4,7 +4,7 @@ import { RegisterDto } from './dto/register.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Post('register')
   register(@Body() dto: any) {
@@ -15,5 +15,11 @@ export class AuthController {
   login(@Body('phone') phone: string) {
     return this.authService.checkPhone(phone);
   }
+
+  @Post('otp-login')
+  async otpLogin(@Body('firebaseToken') token: string) {
+    return this.authService.otpLogin(token);
+  }
+
 
 }

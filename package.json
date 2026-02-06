@@ -34,6 +34,7 @@
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^1.41.3",
+    "firebase-admin": "^13.6.1",
     "mongodb": "^7.0.0",
     "mongoose": "^8.20.2",
     "multer": "^2.0.2",
