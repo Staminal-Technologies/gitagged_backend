@@ -73,7 +73,7 @@ export class OrderService {
   async getAllOrdersForAdmin() {
   return this.orderModel
     .find()
-    .populate('userId', 'name email phone')
+    .populate('userId', 'name email phone address')
     .sort({ createdAt: -1 })
     .lean();
 }
@@ -81,7 +81,7 @@ export class OrderService {
 async getOrderById(id: string) {
   return this.orderModel
     .findById(id)
-    .populate('userId', 'name email phone')
+    .populate('userId', 'name email phone address')
     .populate('items.productId', 'name price')
     .lean();
 }
