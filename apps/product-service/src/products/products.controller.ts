@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Body, Put, UseGuards, Delete, UseInterceptors, UploadedFile, Req } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body, Patch, Put, UseGuards, Delete, UseInterceptors, UploadedFile, Req } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { Express } from 'express';
 import { memoryStorage } from 'multer';
@@ -78,5 +78,22 @@ export class ProductsController {
       url: result.secure_url,
     };
   }
+
+  @Patch(':id/reduce-stock')
+  reduceStock(
+    @Param('id') id: string,
+    @Body() body: { quantity: number },
+  ) {
+    return this.service.reduceStock(id, body.quantity);
+  }
+
+  @Patch(':id/restore-stock')
+  restoreStock(
+    @Param('id') id: string,
+    @Body() body: { quantity: number },
+  ) {
+    return this.service.restoreStock(id, body.quantity);
+  }
+
 
 }

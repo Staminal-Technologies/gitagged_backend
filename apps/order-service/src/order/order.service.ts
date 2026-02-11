@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Order, OrderDocument} from './schema/order.schema';
+import { Order, OrderDocument } from './schema/order.schema';
 import { OrderStatus } from './order-status.enum';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
@@ -33,6 +33,17 @@ export class OrderService {
         0,
       );
 
+      // product stock check and update..
+      for (const item of cartItems) {
+        await firstValueFrom(
+          this.httpService.patch(
+            `http://localhost:3003/products/${item.productId._id}/reduce-stock`,
+            { quantity: item.quantity },
+          ),
+        );
+      }
+
+      //order creation..
       const order = await this.orderModel.create({
         userId,
         items: cartItems.map(item => ({
@@ -71,27 +82,48 @@ export class OrderService {
   }
 
   async getAllOrdersForAdmin() {
-  return this.orderModel
-    .find()
-    .populate('userId', 'name email phone address')
-    .sort({ createdAt: -1 })
-    .lean();
-}
+    return this.orderModel
+      .find()
+      .populate('userId', 'name email phone address')
+      .populate('items.productId', 'title price stock')
+      .sort({ createdAt: -1 })
+      .lean();
+  }
 
-async getOrderById(id: string) {
-  return this.orderModel
-    .findById(id)
-    .populate('userId', 'name email phone address')
-    .populate('items.productId', 'name price')
-    .lean();
-}
+  async getOrderById(id: string) {
+    return this.orderModel
+      .findById(id)
+      .populate('userId', 'name email phone address')
+      .populate('items.productId', 'title price stock')
+      .lean();
+  }
 
-async updateOrderStatus(id: string, status: OrderStatus) {
-  return this.orderModel.findByIdAndUpdate(
-    id,
-    { status },
-    { new: true },
-  );
-}
+  async updateOrderStatus(id: string, status: OrderStatus) {
+    const order = await this.orderModel.findById(id);
+
+    if (!order) {
+      throw new UnauthorizedException('Order not found');
+    }
+
+    // 🔺 Restore stock ONLY when cancelling
+    if (
+      order.status !== OrderStatus.CANCELLED &&
+      status === OrderStatus.CANCELLED
+    ) {
+      for (const item of order.items) {
+        await firstValueFrom(
+          this.httpService.patch(
+            `http://localhost:3003/products/${item.productId}/restore-stock`,
+            { quantity: item.quantity },
+          ),
+        );
+      }
+    }
+
+    order.status = status;
+    await order.save();
+
+    return order;
+  }
 
 }

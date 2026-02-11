@@ -16,8 +16,8 @@ export class ProductsService {
     async findAll() {
         return this.productModel
             .find()
-            .populate('categories', 'name')  
-            .populate('giRegions', 'name')    
+            .populate('categories', 'name')
+            .populate('giRegions', 'name')
             .lean();
     }
 
@@ -107,4 +107,22 @@ export class ProductsService {
             categories: { $in: categoryIds },
         }).lean();
     }
+
+    async reduceStock(productId: string, qty: number) {
+        const product = await this.productModel.findById(productId);
+        if (!product) throw new Error('Product not found');
+        if (product.stock < qty) throw new Error('Insufficient stock');
+
+        product.stock -= qty;
+        return product.save();
+    }
+
+    async restoreStock(productId: string, qty: number) {
+        return this.productModel.findByIdAndUpdate(
+            productId,
+            { $inc: { stock: qty } },
+            { new: true },
+        );
+    }
+
 }

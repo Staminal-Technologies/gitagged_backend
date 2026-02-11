@@ -11,6 +11,7 @@ import { AdminAuthModule } from 'apps/product-service/src/admin-auth/admin-auth.
 import { AdminOrdersController } from './admin-order.controller';
 import { Order, OrderSchema } from './schema/order.schema';
 import { User, UserSchema } from 'apps/product-service/src/users/schema/users.schema';
+import { Product, ProductSchema } from 'apps/product-service/src/products/schema/product.schema';
 
 
 @Module({
@@ -18,6 +19,7 @@ import { User, UserSchema } from 'apps/product-service/src/users/schema/users.sc
     MongooseModule.forFeature([
       { name: Order.name, schema: OrderSchema },
       { name: User.name, schema: UserSchema },
+      {name: Product.name, schema: ProductSchema},
     ]),
     PassportModule,
     JwtModule.registerAsync({
