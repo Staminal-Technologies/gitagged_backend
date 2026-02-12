@@ -20,9 +20,6 @@ export class UsersService {
     return this.userModel.findById(id).lean();
   }
 
-  // registerOrLogin(data: Partial<User>) {
-  //   return this.userModel.create(data); 
-  // }
   async registerOrLogin(data: {
     name: string;
     phone: string;

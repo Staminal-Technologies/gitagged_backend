@@ -42,12 +42,6 @@ export class AuthService {
     email: string;
     address: string;
   }) {
-    // const user  = await this.usersService.registerOrLogin({
-    //   phone: data.phone,
-    //   name: data.name,
-    //   email: data.email,
-    //   address: data.address,
-    // });
     const user = await this.usersService.registerOrLogin(data);
 
     const token = this.jwtService.sign({

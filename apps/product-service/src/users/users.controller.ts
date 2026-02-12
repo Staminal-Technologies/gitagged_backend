@@ -24,11 +24,6 @@ export class UsersController {
     return this.usersService.findById(id);
   }
 
-  @Post()
-  registerOrLogin(@Body() body: any) {
-    return this.usersService.registerOrLogin(body);
-  }
-
   @Post('merge')
   @UseGuards(UserJwtGuard)
   async mergeGuestData(

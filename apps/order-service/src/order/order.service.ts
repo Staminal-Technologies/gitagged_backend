@@ -37,7 +37,7 @@ export class OrderService {
       for (const item of cartItems) {
         await firstValueFrom(
           this.httpService.patch(
-            `http://localhost:3003/products/${item.productId._id}/reduce-stock`,
+            `http://localhost:3002/products/${item.productId._id}/reduce-stock`,
             { quantity: item.quantity },
           ),
         );
@@ -113,7 +113,7 @@ export class OrderService {
       for (const item of order.items) {
         await firstValueFrom(
           this.httpService.patch(
-            `http://localhost:3003/products/${item.productId}/restore-stock`,
+            `http://localhost:3002/products/${item.productId}/restore-stock`,
             { quantity: item.quantity },
           ),
         );
