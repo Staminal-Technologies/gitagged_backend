@@ -12,7 +12,7 @@ import { AdminJwtStrategy } from './jwt.strategy';
 
 @Module({
   imports: [
-    ConfigModule, // ✅ REQUIRED
+    ConfigModule,
 
     MongooseModule.forFeature([
       { name: Admin.name, schema: AdminSchema },
@@ -26,6 +26,7 @@ import { AdminJwtStrategy } from './jwt.strategy';
       }),
     }),
   ],
+  exports: [JwtModule],
   controllers: [AdminAuthController],
   providers: [AdminAuthService, AdminJwtStrategy],
 })

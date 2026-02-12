@@ -20,8 +20,31 @@ export class UsersService {
     return this.userModel.findById(id).lean();
   }
 
-  create(data: Partial<User>) {
-    return this.userModel.create(data);
+  // registerOrLogin(data: Partial<User>) {
+  //   return this.userModel.create(data); 
+  // }
+  async registerOrLogin(data: {
+    name: string;
+    phone: string;
+    email: string;
+    address: string;
+  }) {
+
+    // 1️⃣ Check if user already exists by phone
+    let user = await this.userModel.findOne({ phone: data.phone });
+
+    if (!user) {
+      // 2️⃣ Create new user
+      user = await this.userModel.create({
+        name: data.name,
+        phone: data.phone,
+        email: data.email,
+        address: data.address,
+        role: 'user'
+      });
+    }
+
+    return user;
   }
 
   findByPhone(phone: string) {

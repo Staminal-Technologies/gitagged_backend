@@ -2,7 +2,6 @@ import { Controller, Get, Req, UseGuards, Param, Post, Body, Patch } from '@nest
 import { UsersService } from './users.service';
 import { UserJwtGuard } from '../common/guards/user-jwt.guard';
 import { AdminJwtGuard } from '../common/guards/admin-jwt.guard';
-// import { UserJwtGuard } from '../auth/user-jwt.guard';
 
 @Controller('users')
 export class UsersController {
@@ -26,8 +25,8 @@ export class UsersController {
   }
 
   @Post()
-  createUser(@Body() body: any) {
-    return this.usersService.create(body);
+  registerOrLogin(@Body() body: any) {
+    return this.usersService.registerOrLogin(body);
   }
 
   @Post('merge')

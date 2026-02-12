@@ -42,16 +42,18 @@ export class AuthService {
     email: string;
     address: string;
   }) {
-    const user = await this.usersService.create({
-      phone: data.phone,
-      name: data.name,
-      email: data.email,
-      address: data.address,
-    });
+    // const user  = await this.usersService.registerOrLogin({
+    //   phone: data.phone,
+    //   name: data.name,
+    //   email: data.email,
+    //   address: data.address,
+    // });
+    const user = await this.usersService.registerOrLogin(data);
 
     const token = this.jwtService.sign({
       sub: user._id,
       phone: user.phone,
+      role: user.role,
     });
 
     return {
@@ -85,18 +87,18 @@ export class AuthService {
     let user = await this.usersService.findByPhone(phone);
 
     if (!user) {
-      user = await this.usersService.create({
+      user = await this.usersService.registerOrLogin({
         phone,
         name: 'User',
-        isActive: true,
-        isBlocked: false,
+        email: '',
+        address: '',
       });
     }
 
     const jwt = this.jwtService.sign({
       sub: user._id,
       phone: user.phone,
-      role: 'user',
+      role: user.role,
     });
 
     return {

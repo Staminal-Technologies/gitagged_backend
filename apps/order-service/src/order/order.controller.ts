@@ -8,7 +8,7 @@ import { AdminJwtGuard } from '../common/guards/admin-jwt.guards';
 export class OrderController {
   constructor(private readonly orderService: OrderService) { }
 
-  @UseGuards(AdminJwtGuard)
+  @UseGuards(UserJwtGuard)
   @Post()
   placeOrder(@Req() req) {
     return this.orderService.placeOrder(
