@@ -120,6 +120,21 @@ export class OrderService {
       }
     }
 
+    // 🔻 If reactivating cancelled order → reduce stock again
+    if (
+      order.status === OrderStatus.CANCELLED &&
+      status === OrderStatus.PLACED
+    ) {
+      for (const item of order.items) {
+        await firstValueFrom(
+          this.httpService.patch(
+            `http://localhost:3002/products/${item.productId}/reduce-stock`,
+            { quantity: item.quantity },
+          ),
+        );
+      }
+    }
+
     order.status = status;
     await order.save();
 
