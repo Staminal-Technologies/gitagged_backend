@@ -12,7 +12,7 @@ export class Order {
   @Prop([
     {
       productId: { type: Types.ObjectId, ref: 'Product' },
-      title:String,
+      title: String,
       quantity: Number,
       price: Number,
     },
@@ -38,6 +38,14 @@ export class Order {
   @Prop()
   paidAt?: Date;
 
+  @Prop({ required: true })
+  receiverName: string;
+
+  @Prop({ required: true })
+  receiverPhone: string;
+
+  @Prop({ required: true })
+  receiverAddress: string;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

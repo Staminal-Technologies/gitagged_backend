@@ -10,10 +10,11 @@ export class OrderController {
 
   @UseGuards(UserJwtGuard)
   @Post()
-  placeOrder(@Req() req) {
+  placeOrder(@Req() req,@Body()body:any) {
     return this.orderService.placeOrder(
       req.user.sub,
       req.headers.authorization,
+      body,
     );
   }
 

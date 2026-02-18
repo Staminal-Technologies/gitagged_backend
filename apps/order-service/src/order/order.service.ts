@@ -11,10 +11,12 @@ export class OrderService {
   constructor(
     @InjectModel(Order.name)
     private orderModel: Model<OrderDocument>,
+    @InjectModel('User')
+    private userModel: Model<any>,
     private httpService: HttpService,
   ) { }
 
-  async placeOrder(userId: string, token: string) {
+  async placeOrder(userId: string, token: string, checkoutData: { receiverName: string, receiverPhone: string, receiverAddress: string, saveAddress: boolean }) {
     try {
       const cartRes = await firstValueFrom(
         this.httpService.get('http://localhost:3002/cart', {
@@ -43,7 +45,7 @@ export class OrderService {
         );
       }
 
-      //order creation..
+      // order creation..
       const order = await this.orderModel.create({
         userId,
         items: cartItems.map(item => ({
@@ -53,7 +55,22 @@ export class OrderService {
         })),
         totalAmount,
         status: OrderStatus.PLACED,
+        receiverName: checkoutData.receiverName,
+        receiverPhone: checkoutData.receiverPhone,
+        receiverAddress: checkoutData.receiverAddress,
       });
+
+      // save address to the user data..
+      if (checkoutData.saveAddress) {
+        await this.userModel.findByIdAndUpdate(
+          userId,
+          {
+            $addToSet: {
+              address: checkoutData.receiverAddress,
+            },
+          },
+        );
+      }
 
       // OPTIONAL: clear cart after order
       await firstValueFrom(
