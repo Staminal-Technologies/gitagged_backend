@@ -12,65 +12,73 @@ export class AuthService {
   ) { }
 
   // 🔍 STEP 1: CHECK PHONE
-  async checkPhone(phone: string) {
-    const user = await this.usersService.findByPhone(phone);
+  // async checkPhone(phone: string) {
+  //   const user = await this.usersService.findByPhone(phone);
 
-    if (user) {
-      // ✅ EXISTING USER
-      const token = this.jwtService.sign({
-        sub: user._id,
-        phone: user.phone,
-      });
+  //   return {
+  //     isNewUser: !user,
+  //   };
+  // }
 
-      return {
-        isNewUser: false,
-        token,
-        user,
-      };
-    }
+  // async checkPhone(phone: string) {
+  //   const user = await this.usersService.findByPhone(phone);
 
-    // ❌ NEW USER
-    return {
-      isNewUser: true,
-    };
-  }
+  //   if (user) {
+  //     // ✅ EXISTING USER
+  //     const token = this.jwtService.sign({
+  //       sub: user._id,
+  //       phone: user.phone,
+  //     });
+
+  //     return {
+  //       isNewUser: false,
+  //       token,
+  //       user,
+  //     };
+  //   }
+
+  //   // ❌ NEW USER
+  //   return {
+  //     isNewUser: true,
+  //   };
+  // }
 
   // 🆕 STEP 2: REGISTER AFTER OTP
-  async register(data: {
-    phone: string;
-    name: string;
-    email: string;
-    address: string[];
-  }) {
-    const user = await this.usersService.registerOrLogin(data);
+  // async register(data: {
+  //   phone: string;
+  //   name: string;
+  //   email: string;
+  //   address: string[];
+  // }) {
+  //   const user = await this.usersService.registerOrLogin(data);
 
-    const token = this.jwtService.sign({
-      sub: user._id,
-      phone: user.phone,
-      role: user.role,
-      address :user.address,
-    });
+  //   const token = this.jwtService.sign({
+  //     sub: user._id,
+  //     phone: user.phone,
+  //     role: user.role,
+  //     address: user.address,
+  //   });
 
-    return {
-      token,
-      user,
-    };
-  }
+  //   return {
+  //     token,
+  //     user,
+  //   };
+  // }
 
-  async login(phone: string) {
-    let user = await this.usersService.findByPhone(phone);
+  // async login(phone: string) {
+  //   let user = await this.usersService.findByPhone(phone);
 
-    if (!user) {
-      throw new UnauthorizedException('User not registered');
-    }
+  //   if (!user) {
+  //     throw new UnauthorizedException('User not registered');
+  //   }
 
-    const token = this.jwtService.sign({
-      sub: user._id,
-      phone: user.phone,
-    });
+  //   const token = this.jwtService.sign({
+  //     sub: user._id,
+  //     phone: user.phone,
+  //   });
 
-    return { token };
-  }
+  //   return { token };
+  // }
 
   // for otp..
   async otpLogin(data: {
