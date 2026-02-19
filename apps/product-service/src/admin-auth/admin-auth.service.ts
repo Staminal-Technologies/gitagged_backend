@@ -10,34 +10,34 @@ export class AdminAuthService {
   constructor(
     @InjectModel(Admin.name) private adminModel: Model<Admin>,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
-  async login(email: string, password: string) {
-  console.log('📩 LOGIN INPUT:', email, password);
+  async login(emailOrUserName: string, password: string) {
+    console.log('📩 LOGIN INPUT:', emailOrUserName, password);
 
-  const admin = await this.adminModel.findOne({ email });
+    const admin = await this.adminModel.findOne({ emailOrUserName });
 
-  console.log('🧑 ADMIN FROM DB:', admin);
+    console.log('🧑 ADMIN FROM DB:', admin);
 
-  if (!admin) {
-    console.log('❌ ADMIN NOT FOUND');
-    throw new UnauthorizedException('Invalid credentials');
+    if (!admin) {
+      console.log('❌ ADMIN NOT FOUND');
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const isMatch = await bcrypt.compare(password, admin.password);
+    console.log('🔐 PASSWORD MATCH:', isMatch);
+
+    if (!isMatch) {
+      console.log('❌ PASSWORD MISMATCH');
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    return {
+      accessToken: this.jwtService.sign({
+        sub: admin._id.toString(),
+        role: 'admin',
+      }),
+    };
   }
-
-  const isMatch = await bcrypt.compare(password, admin.password);
-  console.log('🔐 PASSWORD MATCH:', isMatch);
-
-  if (!isMatch) {
-    console.log('❌ PASSWORD MISMATCH');
-    throw new UnauthorizedException('Invalid credentials');
-  }
-
-  return {
-    accessToken: this.jwtService.sign({
-      sub: admin._id.toString(),
-      role: 'admin',
-    }),
-  };
-}
 
 }

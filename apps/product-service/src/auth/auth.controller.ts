@@ -16,8 +16,8 @@ export class AuthController {
   }
 
   @Post('otp-login')
-  async otpLogin(@Body('firebaseToken') token: string) {
-    return this.authService.otpLogin(token);
+  async otpLogin(@Body() body :any) {
+    return this.authService.otpLogin(body);
   }
 
 

@@ -1,4 +1,5 @@
 export class AdminLoginDto {
-  email: string;
+  emailOrUserName: string;
   password: string;
+  mobileNumber: string;
 }

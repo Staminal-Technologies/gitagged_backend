@@ -24,7 +24,7 @@ export class UsersService {
     name: string;
     phone: string;
     email: string;
-    address: string;
+    address: string[];
   }) {
 
     // 1️⃣ Check if user already exists by phone

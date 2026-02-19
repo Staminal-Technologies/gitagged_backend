@@ -40,7 +40,7 @@ export class AuthService {
     phone: string;
     name: string;
     email: string;
-    address: string;
+    address: string[];
   }) {
     const user = await this.usersService.registerOrLogin(data);
 
@@ -48,6 +48,7 @@ export class AuthService {
       sub: user._id,
       phone: user.phone,
       role: user.role,
+      address :user.address,
     });
 
     return {
@@ -72,8 +73,14 @@ export class AuthService {
   }
 
   // for otp..
-  async otpLogin(firebaseToken: string) {
-    const decoded = await this.firebaseService.verifyToken(firebaseToken);
+  async otpLogin(data: {
+    firebaseToken: string;
+    name: string;
+    email?: string;
+    address?: string[];
+  }) {
+
+    const decoded = await this.firebaseService.verifyToken(data.firebaseToken);
 
     const phone = decoded.phone_number;
     if (!phone) throw new UnauthorizedException('Phone not found');
@@ -83,9 +90,9 @@ export class AuthService {
     if (!user) {
       user = await this.usersService.registerOrLogin({
         phone,
-        name: 'User',
-        email: '',
-        address: '',
+        name: data.name,
+        email: data.email || '',
+        address: data.address || [],
       });
     }
 

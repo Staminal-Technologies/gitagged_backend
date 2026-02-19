@@ -4,10 +4,10 @@ import { AdminLoginDto } from './dto/admin-login.dto';
 
 @Controller('admin-auth')
 export class AdminAuthController {
-  constructor(private readonly adminAuthService: AdminAuthService) {}
+  constructor(private readonly adminAuthService: AdminAuthService) { }
 
   @Post('login')
   async login(@Body() dto: AdminLoginDto) {
-    return this.adminAuthService.login(dto.email, dto.password);
+    return this.adminAuthService.login(dto.emailOrUserName, dto.password);
   }
 }

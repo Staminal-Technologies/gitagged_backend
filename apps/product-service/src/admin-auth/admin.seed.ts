@@ -3,10 +3,10 @@ import * as bcrypt from 'bcryptjs';
 import { Admin } from './schema/admin.schema';
 
 export async function seedAdmin(adminModel: Model<Admin>) {
-  const hashedPassword = await bcrypt.hash('admin123', 10);
+  const hashedPassword = await bcrypt.hash('Dhamu@admin', 10);
 
   await adminModel.updateOne(
-    { email: 'admin@gitagged.com' },
+    { emailOrUserName: 'dhamu@gitagged.com' },
     {
       $set: {
         password: hashedPassword,
