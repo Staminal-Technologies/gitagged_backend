@@ -20,13 +20,12 @@ export class CartController {
     @Post('add')
     addToCart(
         @Req() req,
-        @Body() body: { productId: string; quantity: number; price: number },
+        @Body() body: { productId: string; quantity: number; },
     ) {
         return this.cartService.addToCart(
             req.user.sub,
             body.productId,
             body.quantity,
-            body.price,
         );
     }
 
@@ -41,17 +40,28 @@ export class CartController {
         return this.cartService.clearCart(req.user.sub);
     }
 
-    @Put(':id')
+    @Put(':productId')
     updateQty(
-        @Param('id') cartId: string,
+        @Req() req,
+        @Param('productId') productId: string,
         @Body('quantity') quantity: number,
     ) {
-        return this.cartService.updateQuantity(cartId, quantity);
+        return this.cartService.updateQuantity(req.user.sub, productId, quantity);
     }
 
-    @Delete(':id')
-    remove(@Param('id') cartId: string) {
-        return this.cartService.removeItem(cartId);
+    @Delete(':productId')
+    remove(
+        @Req() req,
+        @Param('productId') productId: string,
+    ) {
+        return this.cartService.removeItem(
+            req.user.sub,
+            productId,
+        );
     }
+    // @Delete(':id')
+    // remove(@Param('id') cartId: string) {
+    //     return this.cartService.removeItem(cartId);
+    // }
 
 }

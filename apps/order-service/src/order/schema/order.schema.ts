@@ -19,6 +19,7 @@ export class Order {
   ])
   items: {
     productId: Types.ObjectId;
+    sellerId: Types.ObjectId;
     quantity: number;
     price: number;
   }[];

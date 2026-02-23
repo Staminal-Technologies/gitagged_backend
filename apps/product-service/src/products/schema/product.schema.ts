@@ -6,6 +6,9 @@ export class Product {
     @Prop({ required: true, unique: true })
     slug: string; // slug ID like prod-mysore-silk-saree-01
 
+    @Prop({ type: Types.ObjectId, ref: 'Seller', required: true })
+    sellerId: Types.ObjectId;
+
     @Prop({ required: true })
     title: string;
 
