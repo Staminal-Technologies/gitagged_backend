@@ -36,6 +36,9 @@ export class Seller {
   @Prop({ required: true })
   mobileNumber: string;
 
+  @Prop({ required: true })
+  address:string;
+
   @Prop()
   digitalSignatureUrl: string;
 

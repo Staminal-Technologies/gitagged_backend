@@ -41,4 +41,13 @@ export class SellerController {
   reject(@Param('id') id: string) {
     return this.sellerService.rejectSeller(id);
   }
+
+  @UseGuards(AdminJwtGuard)
+  @Patch(':id/status')
+  updateStatus(
+    @Param('id') id: string,
+    @Body() body: { status: string }
+  ) {
+    return this.sellerService.updateSellerStatus(id, body.status);
+  }
 }

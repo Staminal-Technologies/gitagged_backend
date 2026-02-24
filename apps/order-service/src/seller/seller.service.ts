@@ -81,4 +81,24 @@ export class SellerService {
 
     return { message: 'Seller rejected successfully' };
   }
+
+  // update seller status
+  async updateSellerStatus(sellerId: string, status: string) {
+    const seller = await this.sellerModel.findById(sellerId);
+
+    if (!seller) throw new NotFoundException('Seller not found');
+
+    seller.status = status as approvalStatus;
+    seller.isActive = status === 'APPROVED';
+
+    await seller.save();
+
+    if (status === 'APPROVED') {
+      await this.userModel.findByIdAndUpdate(seller.userId, {
+        role: UserStatus.SELLER,
+      });
+    }
+
+    return { message: 'Status updated successfully' };
+  }
 }

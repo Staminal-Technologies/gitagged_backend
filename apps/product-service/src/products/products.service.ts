@@ -1,10 +1,11 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Product, ProductDocument } from './schema/product.schema';
 import slugify from 'slugify';
 import { Category, CategoryDocument } from '../categories/schema/category.schema';
 import cloudinary from '../common/cloudinary/cloudinary.config';
+import { NotFoundError } from 'rxjs';
 
 @Injectable()
 export class ProductsService {
@@ -110,8 +111,8 @@ export class ProductsService {
 
     async reduceStock(productId: string, qty: number) {
         const product = await this.productModel.findById(productId);
-        if (!product) throw new Error('Product not found');
-        if (product.stock < qty) throw new Error('Insufficient stock');
+        if (!product) throw new NotFoundException('Product not found');
+        if (product.stock < qty) throw new BadRequestException('Insufficient stock');
 
         product.stock -= qty;
         return product.save();

@@ -122,30 +122,24 @@ export class OrderService {
       throw new UnauthorizedException('Order not found');
     }
 
-    // 🔺 Restore stock ONLY when cancelling
+    if (order.status === status) {
+      return order;
+    }
+
     if (
       order.status !== OrderStatus.CANCELLED &&
       status === OrderStatus.CANCELLED
     ) {
       for (const item of order.items) {
-        await firstValueFrom(
-          this.httpService.patch(
-            `http://localhost:3002/products/${item.productId}/restore-stock`,
-            { quantity: item.quantity },
-          ),
-        );
-      }
-    }
 
-    // 🔻 If reactivating cancelled order → reduce stock again
-    if (
-      order.status === OrderStatus.CANCELLED &&
-      status === OrderStatus.PLACED
-    ) {
-      for (const item of order.items) {
+        const productId =
+          typeof item.productId === 'object'
+            ? item.productId.toString()
+            : item.productId;
+
         await firstValueFrom(
           this.httpService.patch(
-            `http://localhost:3002/products/${item.productId}/reduce-stock`,
+            `http://localhost:3002/products/${productId}/restore-stock`,
             { quantity: item.quantity },
           ),
         );
@@ -157,5 +151,38 @@ export class OrderService {
 
     return order;
   }
+
+  // async updateOrderStatus(id: string, status: OrderStatus) {
+  //   const order = await this.orderModel.findById(id);
+
+  //   if (!order) {
+  //     throw new UnauthorizedException('Order not found');
+  //   }
+
+  //   if (order.status === status) {
+  //     return order;
+  //   }
+
+  //   // restore stock only once
+  //   if (
+  //     order.status !== OrderStatus.CANCELLED &&
+  //     status === OrderStatus.CANCELLED
+  //   ) {
+  //     for (const item of order.items) {
+  //       await firstValueFrom(
+  //         this.httpService.patch(
+  //           `http://localhost:3002/products/${item.productId}/restore-stock`,
+  //           { quantity: item.quantity },
+  //         ),
+  //       );
+  //       console.log("ProductId:", item.productId);
+  //     }
+  //   }
+
+  //   order.status = status;
+  //   await order.save();
+
+  //   return order;
+  // }
 
 }
