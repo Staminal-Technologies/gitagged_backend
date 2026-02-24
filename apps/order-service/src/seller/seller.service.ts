@@ -11,7 +11,7 @@ export class SellerService {
   constructor(
     @InjectModel(Seller.name) private sellerModel: Model<SellerDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-  ) {}
+  ) { }
 
   // 🟢 USER APPLY TO BECOME SELLER
   async applySeller(userId: string, data: any) {

@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { User, UserDocument } from './schema/users.schema';
 import { FavoritesService } from '../favorites/favorites.service';
 import { CartService } from '../cart/cart.service';
+import { UserStatus } from './user-status.enum';
 
 @Injectable()
 export class UsersService {
@@ -37,7 +38,7 @@ export class UsersService {
         phone: data.phone,
         email: data.email,
         address: data.address,
-        role: 'user'
+        role: UserStatus.USER,
       });
     }
 
@@ -89,6 +90,24 @@ export class UsersService {
 
     if (!user) throw new NotFoundException('User not found');
     return user;
+  }
+
+  async updateProfile(userId: string, data: {
+    name: string;
+    email: string;
+    address: string[];
+  }) {
+    let user = await this.userModel.findById(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    user.name = data.name;
+    user.email = data.email;
+    user.address = data.address;
+
+    return user.save();
   }
 
 }

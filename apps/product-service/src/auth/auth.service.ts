@@ -81,27 +81,17 @@ export class AuthService {
   // }
 
   // for otp..
-  async otpLogin(data: {
-    firebaseToken: string;
-    name: string;
-    email?: string;
-    address?: string[];
-  }) {
-
+  async otpLogin(data: { firebaseToken: string }) {
     const decoded = await this.firebaseService.verifyToken(data.firebaseToken);
-
     const phone = decoded.phone_number;
-    if (!phone) throw new UnauthorizedException('Phone not found');
 
     let user = await this.usersService.findByPhone(phone);
 
     if (!user) {
-      user = await this.usersService.registerOrLogin({
+      return {
+        isNewUser: true,
         phone,
-        name: data.name,
-        email: data.email || '',
-        address: data.address || [],
-      });
+      };
     }
 
     const jwt = this.jwtService.sign({
@@ -113,6 +103,7 @@ export class AuthService {
     return {
       token: jwt,
       user,
+      isNewUser: false,
     };
   }
 

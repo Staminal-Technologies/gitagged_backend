@@ -5,7 +5,7 @@ import { AdminJwtGuard } from 'apps/product-service/src/common/guards/admin-jwt.
 
 @Controller('sellers')
 export class SellerController {
-  constructor(private readonly sellerService: SellerService) {}
+  constructor(private readonly sellerService: SellerService) { }
 
   // 🟢 USER APPLY
   @UseGuards(UserJwtGuard)

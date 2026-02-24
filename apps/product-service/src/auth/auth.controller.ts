@@ -21,5 +21,4 @@ export class AuthController {
     return this.authService.otpLogin(body);
   }
 
-
 }
