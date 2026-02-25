@@ -37,10 +37,16 @@ export class Seller {
   mobileNumber: string;
 
   @Prop({ required: true })
-  address:string;
+  address: string;
 
-  @Prop()
+  @Prop({ required: true })
   digitalSignatureUrl: string;
+
+  @Prop({ required: true })
+  email: string;
+
+  @Prop({ required: true })
+  password: string;
 
   @Prop({ type: String, enum: approvalStatus, default: approvalStatus.PENDING })
   status: approvalStatus;

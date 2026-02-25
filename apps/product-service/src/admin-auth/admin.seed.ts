@@ -15,6 +15,6 @@ export async function seedAdmin(adminModel: Model<Admin>) {
     { upsert: true },
   );
 
-  console.log('✅ Admin user seeded/updated successfully.');
+  console.log('✅ Admin seeded/updated successfully.');
 }
 
