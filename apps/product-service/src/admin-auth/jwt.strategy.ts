@@ -31,7 +31,7 @@ export class AdminJwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
 
     return {
       sub: admin._id,
-      emailOrUserName: admin.emailOrUserName,
+      emailOrUserName: admin.email,
       mobileNumber: admin.mobileNumber,
       role: 'admin',
     };

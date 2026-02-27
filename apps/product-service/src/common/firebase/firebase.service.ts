@@ -18,4 +18,14 @@ export class FirebaseService {
   async verifyToken(token: string) {
     return admin.auth().verifyIdToken(token);
   }
+
+  // async verifyTokenAp(idToken: string) {
+  //   try {
+  //     const decoded = await admin.auth().verifyIdToken(idToken);
+  //     return decoded;
+  //   } catch (error) {
+  //     throw new UnauthorizedException('Invalid OTP token');
+  //   }
+  // }
+
 }

@@ -7,7 +7,7 @@ export type AdminDocument = Admin & Document;
 @Schema({ timestamps: true })
 export class Admin {
   @Prop({ required: true })
-  emailOrUserName: string;
+  email: string;
 
   @Prop({ required: true })
   password: string;
@@ -15,7 +15,10 @@ export class Admin {
   @Prop({ required: true })
   mobileNumber: string;
 
-  @Prop({type: String, enum: roleStatus, default: roleStatus.ADMIN })
+  @Prop({ required: true })
+  name: string;
+
+  @Prop({ type: String, enum: roleStatus, default: roleStatus.ADMIN })
   role: roleStatus;
 }
 

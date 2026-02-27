@@ -19,6 +19,9 @@ export class Seller {
   businessType: string;
 
   @Prop({ required: true })
+  sellerName: string;
+
+  @Prop({ required: true })
   gstNumber: string;
 
   @Prop({ required: true })

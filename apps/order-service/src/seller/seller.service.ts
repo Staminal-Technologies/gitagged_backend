@@ -5,6 +5,7 @@ import { Seller, SellerDocument } from './schema/seller.schema';
 import { approvalStatus } from './seller-status.enum';
 import { User, UserDocument } from 'apps/product-service/src/users/schema/users.schema';
 import { UserStatus } from 'apps/product-service/src/users/user-status.enum';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class SellerService {
@@ -22,9 +23,12 @@ export class SellerService {
       throw new BadRequestException('Seller request already exists');
     }
 
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+
     const seller = await this.sellerModel.create({
       userId,
       ...data,
+      password: hashedPassword,
       status: 'PENDING',
     });
 

@@ -6,7 +6,7 @@ export async function seedAdmin(adminModel: Model<Admin>) {
   const hashedPassword = await bcrypt.hash('Dhamu@admin', 10);
 
   await adminModel.updateOne(
-    { emailOrUserName: 'dhamu@gitagged.com' },
+    { email: 'dhamu@gitagged.com' },
     {
       $set: {
         password: hashedPassword,

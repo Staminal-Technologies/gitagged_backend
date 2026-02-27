@@ -7,6 +7,9 @@ import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { JwtStrategy } from './jwt.strategy';
 import { FirebaseModule } from '../common/firebase/firebase.module';
+import { Seller, SellerSchema } from 'apps/order-service/src/seller/schema/seller.schema';
+import { Admin, AdminSchema } from '../admin-auth/schema/admin.schema';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
   imports: [
@@ -14,6 +17,11 @@ import { FirebaseModule } from '../common/firebase/firebase.module';
     PassportModule,
     FirebaseModule,
     ConfigModule,
+
+    MongooseModule.forFeature([
+      { name: Admin.name, schema: AdminSchema },
+      { name: Seller.name, schema: SellerSchema },
+    ]),
 
     JwtModule.registerAsync({
       inject: [ConfigService],
