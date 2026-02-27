@@ -1,11 +1,10 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, UnauthorizedException, ForbiddenException} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Product, ProductDocument } from './schema/product.schema';
 import slugify from 'slugify';
 import { Category, CategoryDocument } from '../categories/schema/category.schema';
 import cloudinary from '../common/cloudinary/cloudinary.config';
-import { NotFoundError } from 'rxjs';
 
 @Injectable()
 export class ProductsService {
@@ -14,12 +13,28 @@ export class ProductsService {
         @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
     ) { }
 
-    async findAll() {
-        return this.productModel
-            .find()
-            .populate('categories', 'name')
-            .populate('giRegions', 'name')
-            .lean();
+    // async findAll() {
+    //     return this.productModel
+    //         .find()
+    //         .populate('categories', 'name')
+    //         .populate('giRegions', 'name')
+    //         .lean();
+    // }
+    async findAll(user: any) {
+
+         if (!user) {
+        throw new UnauthorizedException('User not found in request');
+    }
+
+        if (user.role === 'ADMIN') {
+            return this.productModel.find();
+        }
+
+        if (user.role === 'seller') {
+            return this.productModel.find({ sellerId: user.sub });
+        }
+
+        return [];
     }
 
     async findById(id: string) {
@@ -34,28 +49,61 @@ export class ProductsService {
         return this.productModel.find({ giRegions: regionId }).lean();
     }
 
-    async create(data: Partial<Product>) {
-        return this.productModel.create({
-            ...data,
-            images: data.images ?? [],
-        });
-    }
+    // async create(data: Partial<Product>) {
+    //     return this.productModel.create({
+    //         ...data,
+    //         images: data.images ?? [],
+    //     });
+    // }
+    async create(data: any, user: any) {
 
-    async update(id: string, data: Partial<Product>) {
-        const updateData: any = { ...data };
-
-        // ✅ only update images IF provided
-        if (Array.isArray(data.images) && data.images.length > 0) {
-            updateData.images = data.images;
-        } else {
-            delete updateData.images;
+        if (user.role === 'ADMIN') {
+            return this.productModel.create(data);
         }
 
-        return this.productModel.findByIdAndUpdate(
-            id,
-            { $set: updateData },
-            { new: true }
-        ).lean();
+        if (user.role === 'seller') {
+            return this.productModel.create({
+                ...data,
+                sellerId: user.sub,
+            });
+        }
+
+        throw new UnauthorizedException();
+    }
+
+    // async update(id: string, data: Partial<Product>) {
+    //     const updateData: any = { ...data };
+
+    //     // ✅ only update images IF provided
+    //     if (Array.isArray(data.images) && data.images.length > 0) {
+    //         updateData.images = data.images;
+    //     } else {
+    //         delete updateData.images;
+    //     }
+
+    //     return this.productModel.findByIdAndUpdate(
+    //         id,
+    //         { $set: updateData },
+    //         { new: true }
+    //     ).lean();
+    // }
+    async update(id: string, data: any, user: any) {
+
+        const product = await this.productModel.findById(id);
+        if (!product) throw new NotFoundException();
+
+        if (user.role === 'ADMIN') {
+            return this.productModel.findByIdAndUpdate(id, data, { new: true });
+        }
+
+        if (user.role === 'seller') {
+
+            if (product.sellerId.toString() !== user.sub) {
+                throw new ForbiddenException('Not your product');
+            }
+
+            return this.productModel.findByIdAndUpdate(id, data, { new: true });
+        }
     }
 
     async updateProductImage(id: string, file: Express.Multer.File) {
@@ -91,8 +139,26 @@ export class ProductsService {
         });
     }
 
-    async remove(id: string) {
-        return this.productModel.findByIdAndDelete(id);
+    // async remove(id: string) {
+    //     return this.productModel.findByIdAndDelete(id);
+    // }
+    async remove(id: string, user: any) {
+
+        const product = await this.productModel.findById(id);
+        if (!product) throw new NotFoundException();
+
+        if (user.role === 'ADMIN') {
+            return this.productModel.findByIdAndDelete(id);
+        }
+
+        if (user.role === 'seller') {
+
+            if (product.sellerId.toString() !== user.sub) {
+                throw new ForbiddenException('Not your product');
+            }
+
+            return this.productModel.findByIdAndDelete(id);
+        }
     }
 
     // 🔥 NEW METHOD — FIND BY PARENT CATEGORY

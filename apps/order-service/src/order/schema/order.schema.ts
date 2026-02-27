@@ -12,6 +12,7 @@ export class Order {
   @Prop([
     {
       productId: { type: Types.ObjectId, ref: 'Product' },
+      sellerId: { type: Types.ObjectId, ref: 'Seller' },
       title: String,
       quantity: Number,
       price: Number,

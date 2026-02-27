@@ -26,8 +26,8 @@ export class OrderController {
 
   @UseGuards(AdminJwtGuard)
   @Get('admin/all')
-  getAllOrders() {
-    return this.orderService.getAllOrdersForAdmin();
+  getAllOrders(@Req() req) {
+    return this.orderService.getAllOrders(req.user);
   }
 
   @Get(':id')

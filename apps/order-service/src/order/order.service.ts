@@ -50,6 +50,7 @@ export class OrderService {
         userId,
         items: cartItems.map(item => ({
           productId: item.productId._id,
+          sellerId: item.productId.sellerId,
           quantity: item.quantity,
           price: item.price,
         })),
@@ -98,13 +99,38 @@ export class OrderService {
       .lean();
   }
 
-  async getAllOrdersForAdmin() {
-    return this.orderModel
-      .find()
-      .populate('userId', 'name email phone address')
-      .populate('items.productId', 'title price stock')
-      .sort({ createdAt: -1 })
-      .lean();
+  // async getAllOrders() {
+  //   return this.orderModel
+  //     .find()
+  //     .populate('userId', 'name email phone address')
+  //     .populate('items.productId', 'title price stock')
+  //     .sort({ createdAt: -1 })
+  //     .lean();
+  // }
+  async getAllOrders(user: any) {
+
+    // 🟢 ADMIN
+    if (user.role === 'ADMIN') {
+      return this.orderModel
+        .find()
+        .populate('userId', 'name email phone address')
+        .populate('items.productId', 'title price stock')
+        .sort({ createdAt: -1 })
+        .lean();
+    }
+
+    // 🟠 SELLER
+    if (user.role === 'seller') {
+
+      return this.orderModel
+        .find({ 'items.sellerId': user.sub })   // ✅ filter by sellerId
+        .populate('userId', 'name email phone address')
+        .populate('items.productId', 'title price stock')
+        .sort({ createdAt: -1 })
+        .lean();
+    }
+
+    return [];
   }
 
   async getOrderById(id: string) {
@@ -151,38 +177,36 @@ export class OrderService {
 
     return order;
   }
+//   async updateOrderStatus(id: string, status: OrderStatus, user: any) {
 
-  // async updateOrderStatus(id: string, status: OrderStatus) {
-  //   const order = await this.orderModel.findById(id);
+//   const order = await this.orderModel.findById(id);
 
-  //   if (!order) {
-  //     throw new UnauthorizedException('Order not found');
-  //   }
+//   if (!order) {
+//     throw new UnauthorizedException('Order not found');
+//   }
 
-  //   if (order.status === status) {
-  //     return order;
-  //   }
+//   // 🟢 ADMIN
+//   if (user.role === 'ADMIN') {
+//     order.status = status;
+//     await order.save();
+//     return order;
+//   }
 
-  //   // restore stock only once
-  //   if (
-  //     order.status !== OrderStatus.CANCELLED &&
-  //     status === OrderStatus.CANCELLED
-  //   ) {
-  //     for (const item of order.items) {
-  //       await firstValueFrom(
-  //         this.httpService.patch(
-  //           `http://localhost:3002/products/${item.productId}/restore-stock`,
-  //           { quantity: item.quantity },
-  //         ),
-  //       );
-  //       console.log("ProductId:", item.productId);
-  //     }
-  //   }
+//   // 🟠 SELLER
+//   if (user.role === 'seller') {
 
-  //   order.status = status;
-  //   await order.save();
+//     const sellerOwnsOrder = order.items.some(
+//       item => item.sellerId.toString() === user.sub
+//     );
 
-  //   return order;
-  // }
+//     if (!sellerOwnsOrder) {
+//       throw new UnauthorizedException('Not your order');
+//     }
+
+//     order.status = status;
+//     await order.save();
+//     return order;
+//   }
+// }
 
 }

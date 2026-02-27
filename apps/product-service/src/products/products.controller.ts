@@ -4,15 +4,17 @@ import { Express } from 'express';
 import { memoryStorage } from 'multer';
 import { AdminJwtGuard } from '../common/guards/admin-jwt.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { AuthGuard } from '@nestjs/passport';
 import cloudinary, { configureCloudinary } from '../common/cloudinary/cloudinary.config'
 
 @Controller('products')
 export class ProductsController {
   constructor(private readonly service: ProductsService) { }
 
+  @UseGuards(AuthGuard('user-jwt'))
   @Get()
-  async getAll() {
-    return this.service.findAll();
+  async getAll(@Req() req: any) {
+    return this.service.findAll(req.user);
   }
 
   @Get('parent-category/:parentId')
@@ -35,25 +37,29 @@ export class ProductsController {
     return this.service.findByGIRegion(regionId);
   }
 
-  @UseGuards(AdminJwtGuard)
+  // @UseGuards(AdminJwtGuard)
+  @UseGuards(AuthGuard('user-jwt'))
   @Post()
-  async create(@Body() body: any) {
-    return this.service.create(body);
+  async create(@Req() req, @Body() body: any) {
+    return this.service.create(body,req.user);
   }
 
-  @UseGuards(AdminJwtGuard)
+  // @UseGuards(AdminJwtGuard)
+  @UseGuards(AuthGuard('user-jwt'))
   @Put(':id')
-  async update(@Param('id') id: string, @Body() body: any) {
-    return this.service.update(id, body);
+  async update(@Param('id') id: string, @Body() body: any, @Req() req) {
+    return this.service.update(id, body, req.user);
   }
 
-  @UseGuards(AdminJwtGuard)
+  // @UseGuards(AdminJwtGuard)
+  @UseGuards(AuthGuard('user-jwt'))
   @Delete(':id')
-  async remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  async remove(@Param('id') id: string, @Req() req) {
+    return this.service.remove(id, req.user);
   }
 
-  @UseGuards(AdminJwtGuard)
+  // @UseGuards(AdminJwtGuard)
+  @UseGuards(AuthGuard('user-jwt'))
   @Post('upload-image')
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
   async uploadImage(@UploadedFile() file: Express.Multer.File) {
