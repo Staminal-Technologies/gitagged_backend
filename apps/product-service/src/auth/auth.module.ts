@@ -10,6 +10,7 @@ import { FirebaseModule } from '../common/firebase/firebase.module';
 import { Seller, SellerSchema } from 'apps/order-service/src/seller/schema/seller.schema';
 import { Admin, AdminSchema } from '../admin-auth/schema/admin.schema';
 import { MongooseModule } from '@nestjs/mongoose';
+import { SellerJwtStrategy } from 'apps/order-service/src/seller-auth/seller-jwt.strategy';
 
 @Module({
   imports: [
@@ -26,13 +27,13 @@ import { MongooseModule } from '@nestjs/mongoose';
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('USER_JWT_SECRET'),
+        secret: config.get<string>('JWT_SECRET'),
         signOptions: { expiresIn: '7d' },
       }),
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, SellerJwtStrategy],
   exports: [JwtModule, PassportModule],
 })
 export class AuthModule {}

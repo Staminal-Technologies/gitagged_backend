@@ -4,6 +4,7 @@ import { Seller, SellerSchema } from './schema/seller.schema';
 import { User, UserSchema } from 'apps/product-service/src/users/schema/users.schema';
 import { SellerController } from './seller.controller';
 import { SellerService } from './seller.service';
+import { SellerJwtStrategy } from '../seller-auth/seller-jwt.strategy';
 
 @Module({
   imports: [
@@ -13,6 +14,6 @@ import { SellerService } from './seller.service';
     ]),
   ],
   controllers: [SellerController],
-  providers: [SellerService],
+  providers: [SellerService, SellerJwtStrategy],
 })
 export class SellerModule {}

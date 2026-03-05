@@ -3,6 +3,7 @@ import { OrderService } from './order.service';
 import { UserJwtGuard } from '../common/guards/user-jwt.quards';
 import { OrderStatus } from './order-status.enum';
 import { AdminJwtGuard } from '../common/guards/admin-jwt.guards';
+import { SellerJwtGuard } from '../common/guards/seller-jwt.guards';
 
 @Controller('orders')
 export class OrderController {
@@ -10,7 +11,7 @@ export class OrderController {
 
   @UseGuards(UserJwtGuard)
   @Post()
-  placeOrder(@Req() req,@Body()body:any) {
+  placeOrder(@Req() req, @Body() body: any) {
     return this.orderService.placeOrder(
       req.user.sub,
       req.headers.authorization,
@@ -42,5 +43,11 @@ export class OrderController {
     @Body() body: { status: OrderStatus },
   ) {
     return this.orderService.updateOrderStatus(id, body.status);
+  }
+
+  @UseGuards(SellerJwtGuard)
+  @Get('seller/all')
+  getSellerOrders(@Req() req) {
+    return this.orderService.getAllOrders(req.user);
   }
 }

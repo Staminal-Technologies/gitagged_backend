@@ -16,7 +16,7 @@ export class SellerJwtStrategy extends PassportStrategy(
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: process.env.SELLER_JWT_SECRET,
+      secretOrKey: process.env.JWT_SECRET,
     });
   }
 
@@ -30,7 +30,7 @@ export class SellerJwtStrategy extends PassportStrategy(
     return {
       sub: seller._id,
       email: seller.email,
-      role: 'seller',
+      role: 'SELLER',
     };
   }
 }

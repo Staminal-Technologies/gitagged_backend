@@ -5,6 +5,7 @@ import { OrderModule } from './order/order.module';
 import { AdminAuthModule } from 'apps/product-service/src/admin-auth/admin-auth.module';
 import { SellerModule } from './seller/seller.module';
 import { SellerAuthModule } from './seller-auth/seller-auth.module';
+import { SellerJwtStrategy } from './seller-auth/seller-jwt.strategy';
 
 @Module({
   imports: [

@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException, UnauthorizedException, ForbiddenException} from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Product, ProductDocument } from './schema/product.schema';
@@ -22,15 +22,15 @@ export class ProductsService {
     // }
     async findAll(user: any) {
 
-         if (!user) {
-        throw new UnauthorizedException('User not found in request');
-    }
+        if (!user) {
+            throw new UnauthorizedException('User not found in request');
+        }
 
         if (user.role === 'ADMIN') {
             return this.productModel.find();
         }
 
-        if (user.role === 'seller') {
+        if (user.role === 'SELLER') {
             return this.productModel.find({ sellerId: user.sub });
         }
 
@@ -61,7 +61,7 @@ export class ProductsService {
             return this.productModel.create(data);
         }
 
-        if (user.role === 'seller') {
+        if (user.role === 'SELLER') {
             return this.productModel.create({
                 ...data,
                 sellerId: user.sub,
@@ -96,7 +96,7 @@ export class ProductsService {
             return this.productModel.findByIdAndUpdate(id, data, { new: true });
         }
 
-        if (user.role === 'seller') {
+        if (user.role === 'SELLER') {
 
             if (product.sellerId.toString() !== user.sub) {
                 throw new ForbiddenException('Not your product');
@@ -151,7 +151,7 @@ export class ProductsService {
             return this.productModel.findByIdAndDelete(id);
         }
 
-        if (user.role === 'seller') {
+        if (user.role === 'SELLER') {
 
             if (product.sellerId.toString() !== user.sub) {
                 throw new ForbiddenException('Not your product');
@@ -190,6 +190,10 @@ export class ProductsService {
             { $inc: { stock: qty } },
             { new: true },
         );
+    }
+
+    async getSellerProducts(sellerId: string) {
+        return this.productModel.find({ sellerId });
     }
 
 }

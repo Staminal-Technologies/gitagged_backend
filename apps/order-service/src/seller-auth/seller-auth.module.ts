@@ -10,7 +10,7 @@ import { SellerJwtStrategy } from './seller-jwt.strategy';
   imports: [
     MongooseModule.forFeature([{ name: Seller.name, schema: SellerSchema }]),
     JwtModule.register({
-      secret: process.env.SELLER_JWT_SECRET,
+      secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1d' },
     }),
   ],

@@ -6,6 +6,7 @@ import { AdminJwtGuard } from '../common/guards/admin-jwt.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
 import cloudinary, { configureCloudinary } from '../common/cloudinary/cloudinary.config'
+import { SellerJwtGuard } from 'apps/order-service/src/common/guards/seller-jwt.guards';
 
 @Controller('products')
 export class ProductsController {
@@ -41,7 +42,7 @@ export class ProductsController {
   @UseGuards(AuthGuard('user-jwt'))
   @Post()
   async create(@Req() req, @Body() body: any) {
-    return this.service.create(body,req.user);
+    return this.service.create(body, req.user);
   }
 
   // @UseGuards(AdminJwtGuard)
@@ -101,5 +102,11 @@ export class ProductsController {
     return this.service.restoreStock(id, body.quantity);
   }
 
+  @UseGuards(SellerJwtGuard)
+  @Get('seller/my-products')
+  getMyProducts(@Req() req) {
+        console.log(req.user);
+    return this.service.getSellerProducts(req.user.id);
+  }
 
 }

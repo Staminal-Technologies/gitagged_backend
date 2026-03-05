@@ -24,9 +24,13 @@ export class AuthController {
     return this.authService.otpLogin(body);
   }
 
+  // @Post('login')
+  // login(@Body() body: any) {
+  //   return this.authService.login(body.email, body.password);
+  // }
   @Post('login')
-  login(@Body() body: any) {
-    return this.authService.login(body.email, body.password);
+  async login(@Body() body: { identifier: string; password: string }) {
+    return this.authService.login(body.identifier, body.password);
   }
 
   @Post('verify-otp')

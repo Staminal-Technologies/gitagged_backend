@@ -15,7 +15,7 @@ export class AdminJwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: configService.get<string>('ADMIN_JWT_SECRET'),
+      secretOrKey: configService.get<string>('JWT_SECRET'),
     });
   }
 
@@ -33,7 +33,7 @@ export class AdminJwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
       sub: admin._id,
       emailOrUserName: admin.email,
       mobileNumber: admin.mobileNumber,
-      role: 'admin',
+      role: 'ADMIN',
     };
   }
 

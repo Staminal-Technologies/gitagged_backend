@@ -101,9 +101,9 @@ export class AuthService {
         return {
           accessToken: this.jwtService.sign({
             sub: seller._id,
-            role: 'seller',
+            role: 'SELLER',
           }),
-          role: 'seller',
+          role: 'SELLER',
         };
       }
     }

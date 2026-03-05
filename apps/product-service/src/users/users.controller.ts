@@ -45,7 +45,7 @@ export class UsersController {
   }
 
   @UseGuards(AdminJwtGuard)
-  @Get('users')
+  @Get()
   getAllUsersAdmin() {
     return this.usersService.getAllUsersForAdmin();
   }

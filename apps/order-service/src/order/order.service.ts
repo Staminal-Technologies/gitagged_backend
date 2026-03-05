@@ -120,7 +120,7 @@ export class OrderService {
     }
 
     // 🟠 SELLER
-    if (user.role === 'seller') {
+    if (user.role === 'SELLER') {
 
       return this.orderModel
         .find({ 'items.sellerId': user.sub })   // ✅ filter by sellerId
@@ -177,36 +177,5 @@ export class OrderService {
 
     return order;
   }
-//   async updateOrderStatus(id: string, status: OrderStatus, user: any) {
-
-//   const order = await this.orderModel.findById(id);
-
-//   if (!order) {
-//     throw new UnauthorizedException('Order not found');
-//   }
-
-//   // 🟢 ADMIN
-//   if (user.role === 'ADMIN') {
-//     order.status = status;
-//     await order.save();
-//     return order;
-//   }
-
-//   // 🟠 SELLER
-//   if (user.role === 'seller') {
-
-//     const sellerOwnsOrder = order.items.some(
-//       item => item.sellerId.toString() === user.sub
-//     );
-
-//     if (!sellerOwnsOrder) {
-//       throw new UnauthorizedException('Not your order');
-//     }
-
-//     order.status = status;
-//     await order.save();
-//     return order;
-//   }
-// }
 
 }

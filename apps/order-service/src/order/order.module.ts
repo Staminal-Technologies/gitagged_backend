@@ -25,7 +25,7 @@ import { Product, ProductSchema } from 'apps/product-service/src/products/schema
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get('USER_JWT_SECRET'),
+        secret: config.get('JWT_SECRET'),
       }),
     }),
     HttpModule,
