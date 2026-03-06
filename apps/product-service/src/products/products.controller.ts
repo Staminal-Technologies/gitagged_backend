@@ -106,7 +106,7 @@ export class ProductsController {
   @Get('seller/my-products')
   getMyProducts(@Req() req) {
         console.log(req.user);
-    return this.service.getSellerProducts(req.user.id);
+    return this.service.getSellerProducts(req.user.sub);
   }
 
 }

@@ -137,6 +137,4 @@ export class AuthService {
     throw new NotFoundException("Account not found with this mobile number");
   }
 
-
-
 }
