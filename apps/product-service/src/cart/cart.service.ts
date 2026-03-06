@@ -63,22 +63,6 @@ export class CartService {
         }
 
         return cart.save();
-        // const existing = await this.cartModel.findOne({
-        //     userId: uId,
-        //     productId: pId,
-        // });
-
-        // if (existing) {
-        //     existing.quantity += quantity;
-        //     return existing.save();
-        // }
-
-        // return this.cartModel.create({
-        //     userId: uId,
-        //     productId: pId,
-        //     quantity,
-        //     price,
-        // });
     }
 
     // Get user cart
@@ -112,13 +96,6 @@ export class CartService {
 
         return cart.save();
     }
-    // async updateQuantity(cartId: string, quantity: number) {
-    //     return this.cartModel.findByIdAndUpdate(
-    //         cartId,
-    //         { quantity },
-    //         { new: true },
-    //     );
-    // }
 
     // Remove item.
     async removeItem(userId: string, productId: string) {
@@ -134,9 +111,6 @@ export class CartService {
 
     return cart.save();
   }
-    // async removeItem(cartId: string) {
-    //     return this.cartModel.findByIdAndDelete(cartId);
-    // }
 
     // Clear cart
     async clearCart(userId: string): Promise<{ deletedCount?: number }> {

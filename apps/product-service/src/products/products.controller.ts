@@ -105,8 +105,8 @@ export class ProductsController {
   @UseGuards(SellerJwtGuard)
   @Get('seller/my-products')
   getMyProducts(@Req() req) {
-        console.log(req.user);
-    return this.service.getSellerProducts(req.user.sub);
+    console.log("SELLER USER:", req.user);
+    return this.service.getSellerProducts(req.user.sub.toString());
   }
 
 }

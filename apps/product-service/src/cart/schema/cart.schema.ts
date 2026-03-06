@@ -23,14 +23,6 @@ export class Cart {
     price: number;
   }[];
 
-  // @Prop({ type: Types.ObjectId, ref: 'Product', required: true })
-  // productId: Types.ObjectId;
-
-  // @Prop({ required: true, min: 1 })
-  // quantity: number;
-
-  // @Prop({ required: true })
-  // price: number; // snapshot price
 }
 
 export const CartSchema = SchemaFactory.createForClass(Cart);

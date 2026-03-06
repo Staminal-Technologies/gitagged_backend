@@ -24,7 +24,9 @@ export class OrderService {
         }),
       );
 
-      const cartItems = cartRes.data;
+      // const cartItems = cartRes.data;
+      const cart = cartRes.data[0];
+      const cartItems = cart?.items || [];
 
       if (!cartItems || cartItems.length === 0) {
         throw new UnauthorizedException('Cart is empty');
@@ -48,9 +50,18 @@ export class OrderService {
       // order creation..
       const order = await this.orderModel.create({
         userId,
+        // items: cartItems.map(item => ({
+        //   productId: item.productId._id,
+        //   sellerId: item.productId.sellerId,
+        //   quantity: item.quantity,
+        //   price: item.price,
+        // })),
         items: cartItems.map(item => ({
-          productId: item.productId._id,
-          sellerId: item.productId.sellerId,
+          productId:
+            typeof item.productId === 'object'
+              ? item.productId._id
+              : item.productId,
+          sellerId: item.sellerId,
           quantity: item.quantity,
           price: item.price,
         })),
@@ -99,14 +110,6 @@ export class OrderService {
       .lean();
   }
 
-  // async getAllOrders() {
-  //   return this.orderModel
-  //     .find()
-  //     .populate('userId', 'name email phone address')
-  //     .populate('items.productId', 'title price stock')
-  //     .sort({ createdAt: -1 })
-  //     .lean();
-  // }
   async getAllOrders(user: any) {
 
     // 🟢 ADMIN

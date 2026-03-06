@@ -59,9 +59,5 @@ export class CartController {
             productId,
         );
     }
-    // @Delete(':id')
-    // remove(@Param('id') cartId: string) {
-    //     return this.cartService.removeItem(cartId);
-    // }
 
 }

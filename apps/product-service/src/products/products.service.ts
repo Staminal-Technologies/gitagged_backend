@@ -13,13 +13,6 @@ export class ProductsService {
         @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
     ) { }
 
-    // async findAll() {
-    //     return this.productModel
-    //         .find()
-    //         .populate('categories', 'name')
-    //         .populate('giRegions', 'name')
-    //         .lean();
-    // }
     async findAll(user: any) {
 
         if (!user) {
@@ -27,11 +20,15 @@ export class ProductsService {
         }
 
         if (user.role === 'ADMIN') {
-            return this.productModel.find();
+            return this.productModel.find()
+                .populate('categories', 'name').
+                populate('giRegions', 'name').lean();
         }
 
         if (user.role === 'SELLER') {
-            return this.productModel.find({ sellerId: user.sub });
+            return this.productModel.find({ sellerId: user.sub })
+                .populate('categories', 'name').
+                populate('giRegions', 'name').lean();
         }
 
         return [];
