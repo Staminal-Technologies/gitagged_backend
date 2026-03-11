@@ -56,7 +56,7 @@ export class UsersService {
   // merge guest cart and favourites after user login..
   async mergeGuestData(
     userId: string,
-    guestCart: { productId: string; qty: number; price: number }[],
+    guestCart: { productId: string; qty: number; }[],
     guestFavourites: string[],
   ) {
     await this.cartService.mergeGuestCart(userId, guestCart);

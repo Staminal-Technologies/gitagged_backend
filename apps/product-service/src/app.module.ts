@@ -9,6 +9,7 @@ import {AuthModule } from './auth/auth.module';
 import {AdminAuthModule } from './admin-auth/admin-auth.module';
 import {UsersModule} from './users/users.module';
 import { CartModule } from './cart/cart.module';
+import { JwtStrategy } from './auth/jwt.strategy';
 
 @Module({
   imports: [
@@ -35,5 +36,6 @@ import { CartModule } from './cart/cart.module';
     UsersModule,
     CartModule,
   ],
+  providers:[JwtStrategy],
 })
 export class AppModule { }

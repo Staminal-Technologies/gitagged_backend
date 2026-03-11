@@ -20,7 +20,11 @@ export class OrderService {
     try {
       const cartRes = await firstValueFrom(
         this.httpService.get('http://localhost:3002/cart', {
-          headers: { Authorization: token },
+          headers: {
+            Authorization: token.startsWith('Bearer ')
+              ? token
+              : `Bearer ${token}`,
+          },
         }),
       );
 
@@ -43,6 +47,13 @@ export class OrderService {
           this.httpService.patch(
             `http://localhost:3002/products/${item.productId._id}/reduce-stock`,
             { quantity: item.quantity },
+            {
+              headers: {
+                Authorization: token.startsWith('Bearer ')
+                  ? token
+                  : `Bearer ${token}`,
+              },
+            },
           ),
         );
       }
