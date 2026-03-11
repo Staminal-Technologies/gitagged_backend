@@ -36,6 +36,5 @@ import { JwtStrategy } from './auth/jwt.strategy';
     UsersModule,
     CartModule,
   ],
-  providers:[JwtStrategy],
 })
 export class AppModule { }
