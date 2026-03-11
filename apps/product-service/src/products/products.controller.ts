@@ -12,7 +12,7 @@ import { SellerJwtGuard } from 'apps/order-service/src/common/guards/seller-jwt.
 export class ProductsController {
   constructor(private readonly service: ProductsService) { }
 
-  @UseGuards(AuthGuard('user-jwt'))
+  @UseGuards(AuthGuard('jwt'))
   @Get()
   async getAll(@Req() req: any) {
     return this.service.findAll(req.user);
@@ -39,28 +39,28 @@ export class ProductsController {
   }
 
   // @UseGuards(AdminJwtGuard)
-  @UseGuards(AuthGuard('user-jwt'))
+  @UseGuards(AuthGuard('jwt'))
   @Post()
   async create(@Req() req, @Body() body: any) {
     return this.service.create(body, req.user);
   }
 
   // @UseGuards(AdminJwtGuard)
-  @UseGuards(AuthGuard('user-jwt'))
+  @UseGuards(AuthGuard('jwt'))
   @Put(':id')
   async update(@Param('id') id: string, @Body() body: any, @Req() req) {
     return this.service.update(id, body, req.user);
   }
 
   // @UseGuards(AdminJwtGuard)
-  @UseGuards(AuthGuard('user-jwt'))
+  @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   async remove(@Param('id') id: string, @Req() req) {
     return this.service.remove(id, req.user);
   }
 
   // @UseGuards(AdminJwtGuard)
-  @UseGuards(AuthGuard('user-jwt'))
+  @UseGuards(AuthGuard('jwt'))
   @Post('upload-image')
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
   async uploadImage(@UploadedFile() file: Express.Multer.File) {
