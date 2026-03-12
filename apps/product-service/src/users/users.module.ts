@@ -7,9 +7,13 @@ import { CartModule } from '../cart/cart.module';
 import { FavoritesModule as FavouritesModule } from '../favorites/favorites.module';
 import { AdminAuthModule } from '../admin-auth/admin-auth.module';
 import { FirebaseService } from '../common/firebase/firebase.service';
+import { PassportModule } from '@nestjs/passport';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    PassportModule,
+    JwtModule,
     CartModule,
     FavouritesModule,
     AdminAuthModule,
