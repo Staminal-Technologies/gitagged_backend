@@ -20,7 +20,7 @@ import { Product, ProductSchema } from 'apps/product-service/src/products/schema
       { name: User.name, schema: UserSchema },
       {name: Product.name, schema: ProductSchema},
     ]),
-    PassportModule.register({defaultStrategy:'jwt'}),
+    PassportModule.register({defaultStrategy:'user-jwt'}),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

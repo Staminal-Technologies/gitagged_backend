@@ -36,7 +36,12 @@ export class UsersController {
     @Req() req,
     @Body() body: { cart: any[]; favourites: string[] }
   ) {
+    console.log("MERGE USER 👉", req.user);
     const userId = req.user.sub; // from JWT
+
+    if (!userId) {
+      throw new Error("User not found in JWT");
+    }
     return this.usersService.mergeGuestData(
       userId,
       body.cart || [],

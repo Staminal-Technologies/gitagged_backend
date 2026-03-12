@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+export class JwtStrategy extends PassportStrategy(Strategy, 'user-jwt') {
   constructor(configService: ConfigService) {
     console.log("JWT STRATEGY INITIALIZED - orderService");
     console.log("JWT_SECRET:", configService.get('JWT_SECRET'));

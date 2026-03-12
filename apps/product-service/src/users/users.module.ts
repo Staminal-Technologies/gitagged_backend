@@ -9,6 +9,7 @@ import { AdminAuthModule } from '../admin-auth/admin-auth.module';
 import { FirebaseService } from '../common/firebase/firebase.service';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
+import { JwtStrategy } from '../auth/jwt.strategy';
 
 @Module({
   imports: [MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
@@ -18,7 +19,7 @@ import { JwtModule } from '@nestjs/jwt';
     FavouritesModule,
     AdminAuthModule,
   ],
-  providers: [UsersService, FirebaseService],
+  providers: [UsersService, FirebaseService, JwtStrategy],
   controllers: [UsersController],
   exports: [UsersService],
 })
