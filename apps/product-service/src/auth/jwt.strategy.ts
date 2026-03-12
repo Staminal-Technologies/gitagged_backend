@@ -6,7 +6,10 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'user-jwt') {
   constructor(configService: ConfigService) {
-    console.log("JWT STRATEGY INITIALIZED - ProductService",configService.get('JWT_SECRET'));
+    console.log("JWT STRATEGY INITIALIZED - ProductService", configService.get('JWT_SECRET'));
+    const secret = configService.get<string>('JWT_SECRET');
+
+    console.log("ORDER SERVICE JWT SECRET 👉", secret);
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: configService.get<string>('JWT_SECRET'),
@@ -14,7 +17,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'user-jwt') {
   }
 
   async validate(payload: any) {
-    console.log("JWT valid in Product-sevice :",payload);
+    console.log("JWT valid in Product-sevice :", payload);
     return { sub: payload.sub, role: payload.role, phone: payload.phone };
   }
 }
