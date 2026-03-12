@@ -1,6 +1,6 @@
 import { Controller, Post, Get, Req, UseGuards, Param, Patch, Body } from '@nestjs/common';
 import { OrderService } from './order.service';
-import { UserJwtGuard } from '../common/guards/user-jwt.quards';
+import { UserJwtGuard } from '../common/guards/user-jwt.guards';
 import { OrderStatus } from './order-status.enum';
 import { AdminJwtGuard } from '../common/guards/admin-jwt.guards';
 import { SellerJwtGuard } from '../common/guards/seller-jwt.guards';
