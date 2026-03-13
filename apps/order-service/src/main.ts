@@ -10,7 +10,8 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  await app.listen(3003); // 👈 Order service port
+  const port = process.env.ORDER_SERVICE_PORT || 3003;
+  await app.listen(port); // 👈 Order service port
   console.log('Order service running on port 3003');
 }
 bootstrap();
