@@ -24,7 +24,7 @@ import {AuthModule} from 'apps/product-service/src/auth/auth.module';
       }),
     }),
 
-    AuthModule,
+    // AuthModule,
     OrderModule,
     // AdminAuthModule,
     SellerModule,
