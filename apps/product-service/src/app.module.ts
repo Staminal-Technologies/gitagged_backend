@@ -16,7 +16,7 @@ import { JwtStrategy } from './auth/jwt.strategy';
     // 👇 THIS LOADS .env
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: 'apps/product-service/.env',
+      // envFilePath: '.env',
     }),
 
     // 👇 THIS READS MONGODB_URI

@@ -13,7 +13,7 @@ import {AuthModule} from 'apps/product-service/src/auth/auth.module';
     // 👇 Load .env for order-service
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: 'apps/order-service/.env',
+      // envFilePath: '.env',
     }),
 
     // 👇 Safe MongoDB connection
