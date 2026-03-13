@@ -21,18 +21,19 @@ import { Product, ProductSchema } from 'apps/product-service/src/products/schema
       {name: Product.name, schema: ProductSchema},
     ]),
     PassportModule.register({defaultStrategy:'user-jwt'}),
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.get('JWT_SECRET'),
-      }),
-    }),
+    // JwtModule.registerAsync({
+    //   imports: [ConfigModule],
+    //   inject: [ConfigService],
+    //   useFactory: (config: ConfigService) => ({
+    //     secret: config.get('JWT_SECRET'),
+    //   }),
+    // }),
     HttpModule,
     AdminAuthModule,
   ],
   controllers: [OrderController, AdminOrdersController],
-  providers: [OrderService, JwtStrategy],
+  // providers: [OrderService, JwtStrategy],
+  providers: [OrderService],
   exports:[PassportModule],
 })
 export class OrderModule { }
