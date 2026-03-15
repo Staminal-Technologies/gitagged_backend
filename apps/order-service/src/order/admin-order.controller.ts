@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { OrderStatus } from './order-status.enum';
-import { AdminJwtGuard } from 'apps/product-service/src/common/guards/admin-jwt.guard';
+import { AdminJwtGuard } from '../common/guards/admin-jwt.guards';
 
 @Controller('admin/orders')
 @UseGuards(AdminJwtGuard)

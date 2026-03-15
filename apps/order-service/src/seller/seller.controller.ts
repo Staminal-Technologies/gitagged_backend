@@ -1,7 +1,7 @@
 import { Controller, Post, Get, Patch, Param, Body, Req, UseGuards } from '@nestjs/common';
 import { SellerService } from './seller.service';
-import { UserJwtGuard } from 'apps/product-service/src/common/guards/user-jwt.guard';
-import { AdminJwtGuard } from 'apps/product-service/src/common/guards/admin-jwt.guard';
+import { UserJwtGuard } from '../common/guards/user-jwt.guards';
+import { AdminJwtGuard } from '../common/guards/admin-jwt.guards';
 
 @Controller('sellers')
 export class SellerController {

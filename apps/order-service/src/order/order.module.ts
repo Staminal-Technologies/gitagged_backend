@@ -2,16 +2,12 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { OrderController } from './order.controller';
 import { OrderService } from './order.service';
-// import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
-// import { JwtStrategy } from '../common/strategies/jwt.strategy';
 import { HttpModule } from '@nestjs/axios';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AdminAuthModule } from 'apps/product-service/src/admin-auth/admin-auth.module';
+import { AdminAuthModule } from '../common/admin-auth/admin-auth.module';
 import { AdminOrdersController } from './admin-order.controller';
 import { Order, OrderSchema } from './schema/order.schema';
-import { User, UserSchema } from 'apps/product-service/src/users/schema/users.schema';
-import { Product, ProductSchema } from 'apps/product-service/src/products/schema/product.schema';
+import { User, UserSchema } from '../common/schema/user.schema';
+import { Product, ProductSchema } from '../common/schema/product.schema';
 import { AuthModule } from '../common/auth/auth.module';
 
 @Module({

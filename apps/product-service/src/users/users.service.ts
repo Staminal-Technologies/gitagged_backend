@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import { User, UserDocument } from './schema/users.schema';
 import { FavoritesService } from '../favorites/favorites.service';
 import { CartService } from '../cart/cart.service';
-import { UserStatus } from './user-status.enum';
+import { UserStatus } from '../enum/user-status.enum';
 
 @Injectable()
 export class UsersService {

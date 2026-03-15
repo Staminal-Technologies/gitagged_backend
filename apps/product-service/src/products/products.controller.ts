@@ -6,7 +6,7 @@ import { AdminJwtGuard } from '../common/guards/admin-jwt.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
 import cloudinary, { configureCloudinary } from '../common/cloudinary/cloudinary.config'
-import { SellerJwtGuard } from 'apps/order-service/src/common/guards/seller-jwt.guards';
+import { SellerJwtGuard } from '../common/guards/seller-jwt.guard';
 
 @Controller('products')
 export class ProductsController {

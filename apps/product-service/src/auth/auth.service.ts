@@ -3,7 +3,7 @@ import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { FirebaseService } from '../common/firebase/firebase.service';
-import { Seller } from 'apps/order-service/src/seller/schema/seller.schema';
+import { Seller } from '../schema/seller.schema';
 import { Model } from 'mongoose';
 import { Admin } from '../admin-auth/schema/admin.schema';
 import * as bcrypt from 'bcryptjs';
