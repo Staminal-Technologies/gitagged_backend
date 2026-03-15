@@ -12,7 +12,7 @@ import { AdminOrdersController } from './admin-order.controller';
 import { Order, OrderSchema } from './schema/order.schema';
 import { User, UserSchema } from 'apps/product-service/src/users/schema/users.schema';
 import { Product, ProductSchema } from 'apps/product-service/src/products/schema/product.schema';
-import { AuthModule } from 'apps/product-service/src/auth/auth.module';
+import { AuthModule } from '../common/auth/auth.module';
 
 @Module({
   imports: [
