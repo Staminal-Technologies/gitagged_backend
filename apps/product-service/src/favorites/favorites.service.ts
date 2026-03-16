@@ -19,8 +19,14 @@ export class FavoritesService {
 
     async getMyFavorites(userId: string) {
         return this.favoriteModel
-            .find({ userId })
-            .populate('productId')
+            // .find({ userId })
+            // .populate('productId')
+            // .lean();
+            .find({ userId: new Types.ObjectId(userId) })
+            .populate({
+                path: 'productId',
+                select: 'title price images categories giRegions',
+            })
             .lean();
     }
 

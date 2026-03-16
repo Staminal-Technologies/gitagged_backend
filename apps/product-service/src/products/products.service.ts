@@ -45,13 +45,6 @@ export class ProductsService {
     async findByGIRegion(regionId: string) {
         return this.productModel.find({ giRegions: regionId }).lean();
     }
-
-    // async create(data: Partial<Product>) {
-    //     return this.productModel.create({
-    //         ...data,
-    //         images: data.images ?? [],
-    //     });
-    // }
     async create(data: any, user: any) {
 
         if (user.role === 'ADMIN') {
@@ -68,22 +61,6 @@ export class ProductsService {
         throw new UnauthorizedException();
     }
 
-    // async update(id: string, data: Partial<Product>) {
-    //     const updateData: any = { ...data };
-
-    //     // ✅ only update images IF provided
-    //     if (Array.isArray(data.images) && data.images.length > 0) {
-    //         updateData.images = data.images;
-    //     } else {
-    //         delete updateData.images;
-    //     }
-
-    //     return this.productModel.findByIdAndUpdate(
-    //         id,
-    //         { $set: updateData },
-    //         { new: true }
-    //     ).lean();
-    // }
     async update(id: string, data: any, user: any) {
 
         const product = await this.productModel.findById(id);
@@ -136,9 +113,6 @@ export class ProductsService {
         });
     }
 
-    // async remove(id: string) {
-    //     return this.productModel.findByIdAndDelete(id);
-    // }
     async remove(id: string, user: any) {
 
         const product = await this.productModel.findById(id);
@@ -190,7 +164,7 @@ export class ProductsService {
     }
 
     async getSellerProducts(sellerId: string) {
-        return this.productModel.find({ sellerId });
+        return this.productModel.find({ sellerId }).populate('categories').populate('giRegions');
     }
 
 }

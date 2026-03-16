@@ -10,6 +10,7 @@ import { FavoritesService } from './favorites.service';
       { name: Favorite.name, schema: FavoriteSchema },
     ]),
   ],
+  controllers:[FavoritesController],
   providers: [FavoritesService],
   exports: [FavoritesService],
 })
