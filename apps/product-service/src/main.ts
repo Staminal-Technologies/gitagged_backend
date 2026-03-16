@@ -16,6 +16,7 @@ async function bootstrap() {
   await app.listen(port);
 
   console.log(`🚀 Product service running on port ${port}`);
+  console.log('JWT_SECRET loaded:', process.env.JWT_SECRET);
 
   // Simple connection test
   const mongoose = app.get('DatabaseConnection');

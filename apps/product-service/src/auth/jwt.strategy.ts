@@ -8,6 +8,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'user-jwt') {
   constructor(configService: ConfigService) {
     console.log("JWT STRATEGY INITIALIZED - ProductService", configService.get('JWT_SECRET'));
     const secret = configService.get<string>('JWT_SECRET');
+    console.log('🚀 JWT Strategy Constructor');
+    console.log('📝 Secret loaded:', secret ? 'YES' : 'NO');
+    console.log('🔑 Secret value:', secret);
+    console.log('📏 Secret length:', secret?.length);
 
     console.log("ORDER SERVICE JWT SECRET 👉", secret);
     super({

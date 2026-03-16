@@ -13,5 +13,6 @@ async function bootstrap() {
   const port = process.env.ORDER_SERVICE_PORT || 3003;
   await app.listen(port); // 👈 Order service port
   console.log('Order service running on port 3003');
+  console.log('JWT_SECRET loaded:', process.env.JWT_SECRET);
 }
 bootstrap();
