@@ -33,7 +33,7 @@ export class SellerAuthService {
         sub: seller._id,
         role: 'SELLER'
       }, {
-        secret: process.env.SELLER_JWT_SECRET,
+        secret: process.env.JWT_SECRET,
       })
     };
   }
