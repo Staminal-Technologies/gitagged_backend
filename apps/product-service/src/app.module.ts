@@ -12,13 +12,10 @@ import { CartModule } from './cart/cart.module';
 
 @Module({
   imports: [
-    // 👇 THIS LOADS .env
     ConfigModule.forRoot({
       isGlobal: true,
-      // envFilePath: '.env',
     }),
 
-    // 👇 THIS READS MONGODB_URI
     MongooseModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({

@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Order, OrderDocument } from './schema/order.schema';
@@ -29,11 +29,12 @@ export class OrderService {
       );
 
       // const cartItems = cartRes.data;
-      const cart = cartRes.data[0];
+      // const cart = cartRes.data[0];
+      const cart = cartRes.data;
       const cartItems = cart?.items || [];
 
       if (!cartItems || cartItems.length === 0) {
-        throw new UnauthorizedException('Cart is empty');
+        throw new BadRequestException('Cart is empty');
       }
 
       const totalAmount = cartItems.reduce(
@@ -42,31 +43,94 @@ export class OrderService {
       );
 
       // product stock check and update..
-      for (const item of cartItems) {
-        await firstValueFrom(
-          this.httpService.patch(
-            `http://localhost:3002/products/${item.productId._id}/reduce-stock`,
-            { quantity: item.quantity },
-            {
-              headers: {
-                Authorization: token.startsWith('Bearer ')
-                  ? token
-                  : `Bearer ${token}`,
+      // for (const item of cartItems) {
+      //   const product = item.productId;
+
+      //   if (!product || product.stock < item.quantity) {
+      //     throw new UnauthorizedException(
+      //       `Product ${product?.title || ''} is out of stock`,
+      //     );
+      //   }
+
+      //   await firstValueFrom(
+      //     this.httpService.patch(
+      //       `http://localhost:3002/products/${item.productId._id}/reduce-stock`,
+      //       { quantity: item.quantity },
+      //       {
+      //         headers: {
+      //           Authorization: token.startsWith('Bearer ')
+      //             ? token
+      //             : `Bearer ${token}`,
+      //         },
+      //       },
+      //     ),
+      //   );
+      // }
+      const updatedProducts: { id: string; qty: number }[] = [];
+
+      try {
+        // ✅ Step 1: Validate stock
+        for (const item of cartItems) {
+          const product = item.productId;
+
+          if (!product || product.stock < item.quantity) {
+            throw new BadRequestException(
+              `Product ${product?.title || ''} is out of stock`,
+            );
+          }
+        }
+
+        // ✅ Step 2: Reduce stock
+        for (const item of cartItems) {
+          const productId =
+            typeof item.productId === 'object'
+              ? item.productId._id
+              : item.productId;
+
+          await firstValueFrom(
+            this.httpService.patch(
+              `http://localhost:3002/products/${productId}/reduce-stock`,
+              { quantity: item.quantity },
+              {
+                headers: {
+                  Authorization: token.startsWith('Bearer ')
+                    ? token
+                    : `Bearer ${token}`,
+                },
               },
-            },
-          ),
-        );
+            ),
+          );
+
+          updatedProducts.push({
+            id: productId,
+            qty: item.quantity,
+          });
+        }
+
+      } catch (err) {
+        // 🔥 ROLLBACK
+        for (const p of updatedProducts) {
+          await firstValueFrom(
+            this.httpService.patch(
+              `http://localhost:3002/products/${p.id}/restore-stock`,
+              { quantity: p.qty },
+              {
+                headers: {
+                  Authorization: token.startsWith('Bearer ')
+                    ? token
+                    : `Bearer ${token}`,
+                },
+              },
+            ),
+          );
+        }
+
+        throw err;
       }
 
       // order creation..
       const order = await this.orderModel.create({
         userId,
-        // items: cartItems.map(item => ({
-        //   productId: item.productId._id,
-        //   sellerId: item.productId.sellerId,
-        //   quantity: item.quantity,
-        //   price: item.price,
-        // })),
         items: cartItems.map(item => ({
           productId:
             typeof item.productId === 'object'
@@ -155,11 +219,11 @@ export class OrderService {
       .lean();
   }
 
-  async updateOrderStatus(id: string, status: OrderStatus) {
+  async updateOrderStatus(id: string, status: OrderStatus, token: String) {
     const order = await this.orderModel.findById(id);
 
     if (!order) {
-      throw new UnauthorizedException('Order not found');
+      throw new BadRequestException('Order not found');
     }
 
     if (order.status === status) {
@@ -181,6 +245,11 @@ export class OrderService {
           this.httpService.patch(
             `http://localhost:3002/products/${productId}/restore-stock`,
             { quantity: item.quantity },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            },
           ),
         );
       }

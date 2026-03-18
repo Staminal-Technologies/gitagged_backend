@@ -22,23 +22,72 @@ export class CartService {
         if (!Types.ObjectId.isValid(productId)) {
             throw new BadRequestException('Invalid productId');
         }
+
+        if (quantity <= 0) {
+            throw new BadRequestException('Quantity must be greater than 0');
+        }
         const uId = new Types.ObjectId(userId);
         const pId = new Types.ObjectId(productId);
 
-        const product = await this.productModel.findById(pId);
+        const product = await this.productModel.findById(pId).select('stock price sellerId');
         if (!product) throw new NotFoundException('Product not found');
+        if (product.stock <= 0) {
+            throw new BadRequestException('Product is out of stock');
+        }
+        // if (quantity > product.stock) {
+        //     throw new BadRequestException(`only ${product.stock} items are available!!`)
+        // }
 
-        const sellerId = product.sellerId;
+        // const sellerId = product.sellerId;
+        // let cart = await this.cartModel.findOne({ userId: uId });
+
+        // // 🆕 Create cart if not exists
+        // if (!cart) {
+        //     return this.cartModel.create({
+        //         userId: uId,
+        //         items: [
+        //             {
+        //                 productId: pId,
+        //                 sellerId,
+        //                 quantity,
+        //                 price: product.price,
+        //             },
+        //         ],
+        //     });
+        // }
+
+        // // 🔍 Check if item exists
+        // const existingItem = cart.items.find(
+        //     (item) => item.productId.toString() === pId.toString(),
+        // );
+
+        // if (existingItem) {
+        //     existingItem.quantity += quantity;
+        // } 
+        // else {
+        //     cart.items.push({
+        //         productId: pId,
+        //         sellerId,
+        //         quantity,
+        //         price: product.price,
+        //     });
+        // }
         let cart = await this.cartModel.findOne({ userId: uId });
 
-        // 🆕 Create cart if not exists
+        // 🆕 Create cart
         if (!cart) {
+            if (quantity > product.stock) {
+                throw new BadRequestException(
+                    `Only ${product.stock} items available`,
+                );
+            }
+
             return this.cartModel.create({
                 userId: uId,
                 items: [
                     {
                         productId: pId,
-                        sellerId,
+                        sellerId: product.sellerId,
                         quantity,
                         price: product.price,
                     },
@@ -46,17 +95,30 @@ export class CartService {
             });
         }
 
-        // 🔍 Check if item exists
         const existingItem = cart.items.find(
             (item) => item.productId.toString() === pId.toString(),
         );
 
         if (existingItem) {
-            existingItem.quantity += quantity;
+            const newQty = existingItem.quantity + quantity;
+
+            if (newQty > product.stock) {
+                throw new BadRequestException(
+                    `Only ${product.stock} items available`,
+                );
+            }
+
+            existingItem.quantity = newQty;
         } else {
+            if (quantity > product.stock) {
+                throw new BadRequestException(
+                    `Only ${product.stock} items available`,
+                );
+            }
+
             cart.items.push({
                 productId: pId,
-                sellerId,
+                sellerId: product.sellerId,
                 quantity,
                 price: product.price,
             });
@@ -80,6 +142,9 @@ export class CartService {
         productId: string,
         quantity: number,
     ) {
+        if (quantity <= 0) {
+            throw new BadRequestException('Quantity must be greater than 0');
+        }
         const uId = new Types.ObjectId(userId);
         const pId = new Types.ObjectId(productId);
 
@@ -92,6 +157,23 @@ export class CartService {
 
         if (!item) throw new NotFoundException('Item not found');
 
+        // item.quantity = quantity;
+        const product = await this.productModel
+            .findById(pId)
+            .select('stock');
+
+        if (!product) throw new NotFoundException('Product not found');
+
+        if (product.stock <= 0) {
+            throw new BadRequestException('Product is out of stock');
+        }
+
+        if (quantity > product.stock) {
+            throw new BadRequestException(
+                `Only ${product.stock} items available`,
+            );
+        }
+
         item.quantity = quantity;
 
         return cart.save();
@@ -99,18 +181,18 @@ export class CartService {
 
     // Remove item.
     async removeItem(userId: string, productId: string) {
-    const uId = new Types.ObjectId(userId);
-    const pId = new Types.ObjectId(productId);
+        const uId = new Types.ObjectId(userId);
+        const pId = new Types.ObjectId(productId);
 
-    const cart = await this.cartModel.findOne({ userId: uId });
-    if (!cart) throw new NotFoundException('Cart not found');
+        const cart = await this.cartModel.findOne({ userId: uId });
+        if (!cart) throw new NotFoundException('Cart not found');
 
-    cart.items = cart.items.filter(
-      (item) => item.productId.toString() !== pId.toString(),
-    );
+        cart.items = cart.items.filter(
+            (item) => item.productId.toString() !== pId.toString(),
+        );
 
-    return cart.save();
-  }
+        return cart.save();
+    }
 
     // Clear cart
     async clearCart(userId: string): Promise<{ deletedCount?: number }> {
@@ -118,40 +200,13 @@ export class CartService {
         return this.cartModel.deleteMany({ userId: uId });
     }
 
-     async mergeGuestCart(
-    userId: string,
-    guestCart: { productId: string; qty: number }[],
-  ) {
-    for (const item of guestCart) {
-      await this.addToCart(userId, item.productId, item.qty);
+    async mergeGuestCart(
+        userId: string,
+        guestCart: { productId: string; qty: number }[],
+    ) {
+        for (const item of guestCart) {
+            await this.addToCart(userId, item.productId, item.qty);
+        }
     }
-}
-  
-    // async mergeGuestCart(
-    //     userId: string,
-    //     guestCart: { productId: string; qty: number; price: number }[],
-    // ) {
-    //     const uId = new Types.ObjectId(userId);
 
-    //     for (const item of guestCart) {
-    //         const pId = new Types.ObjectId(item.productId);
-
-    //         const existing = await this.cartModel.findOne({
-    //             userId: uId,
-    //             productId: pId,
-    //         });
-
-    //         if (existing) {
-    //             existing.quantity += item.qty;
-    //             await existing.save();
-    //         } else {
-    //             await this.cartModel.create({
-    //                 userId: uId,
-    //                 productId: pId,
-    //                 quantity: item.qty,
-    //                 price: item.price,
-    //             });
-    //         }
-    //     }
-    // }
 }

@@ -41,8 +41,9 @@ export class OrderController {
   updateStatus(
     @Param('id') id: string,
     @Body() body: { status: OrderStatus },
+    @Req() req,
   ) {
-    return this.orderService.updateOrderStatus(id, body.status);
+    return this.orderService.updateOrderStatus(id, body.status, req.headers.authorization);
   }
 
   @UseGuards(SellerJwtGuard)

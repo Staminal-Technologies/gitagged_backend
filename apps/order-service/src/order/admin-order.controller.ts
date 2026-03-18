@@ -25,7 +25,8 @@ export class AdminOrdersController {
   updateStatus(
     @Param('id') id: string,
     @Body() body: { status: OrderStatus },
+    token : string
   ) {
-    return this.orderService.updateOrderStatus(id, body.status);
+    return this.orderService.updateOrderStatus(id, body.status,token);
   }
 }
