@@ -59,6 +59,14 @@ export class Seller {
 
   @Prop({ type: String, enum: roleStatus, default: roleStatus.SELLER })
   role: roleStatus;
+
+  //for the seller restriction..
+  // @Prop()
+  // selectedRegion: String;
+
+  // @Prop()
+  // selectedCategory: String;
+
 }
 
 export const SellerSchema = SchemaFactory.createForClass(Seller);

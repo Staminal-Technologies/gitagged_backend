@@ -35,8 +35,8 @@ export class FavoritesService {
         productId: string,
     ): Promise<{ deletedCount?: number }> {
         return this.favoriteModel.deleteOne({
-            userId,
-            productId,
+            userId: new Types.ObjectId(userId),
+            productId: new Types.ObjectId(productId),
         });
     }
 
@@ -47,6 +47,11 @@ export class FavoritesService {
         const uId = new Types.ObjectId(userId);
 
         for (const productId of guestFavourites) {
+            // ✅ Validate productId before converting
+            if (!Types.ObjectId.isValid(productId)) {
+                console.log(`Skipping invalid productId: ${productId}`);
+                continue;
+            }
             const pId = new Types.ObjectId(productId);
 
             const exists = await this.favoriteModel.findOne({
