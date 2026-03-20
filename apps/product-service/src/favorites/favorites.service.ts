@@ -19,9 +19,6 @@ export class FavoritesService {
 
     async getMyFavorites(userId: string) {
         return this.favoriteModel
-            // .find({ userId })
-            // .populate('productId')
-            // .lean();
             .find({ userId: new Types.ObjectId(userId) })
             .populate({
                 path: 'productId',
@@ -47,7 +44,7 @@ export class FavoritesService {
         const uId = new Types.ObjectId(userId);
 
         for (const productId of guestFavourites) {
-            // ✅ Validate productId before converting
+            // Validate productId before converting
             if (!Types.ObjectId.isValid(productId)) {
                 console.log(`Skipping invalid productId: ${productId}`);
                 continue;

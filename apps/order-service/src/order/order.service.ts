@@ -28,9 +28,10 @@ export class OrderService {
         }),
       );
 
-      // const cartItems = cartRes.data;
-      // const cart = cartRes.data[0];
-      const cart = cartRes.data;
+      const cartList = cartRes.data;
+
+      const cart = Array.isArray(cartList) ? cartList[0] : cartList;
+
       const cartItems = cart?.items || [];
 
       if (!cartItems || cartItems.length === 0) {
@@ -42,30 +43,6 @@ export class OrderService {
         0,
       );
 
-      // product stock check and update..
-      // for (const item of cartItems) {
-      //   const product = item.productId;
-
-      //   if (!product || product.stock < item.quantity) {
-      //     throw new UnauthorizedException(
-      //       `Product ${product?.title || ''} is out of stock`,
-      //     );
-      //   }
-
-      //   await firstValueFrom(
-      //     this.httpService.patch(
-      //       `http://localhost:3002/products/${item.productId._id}/reduce-stock`,
-      //       { quantity: item.quantity },
-      //       {
-      //         headers: {
-      //           Authorization: token.startsWith('Bearer ')
-      //             ? token
-      //             : `Bearer ${token}`,
-      //         },
-      //       },
-      //     ),
-      //   );
-      // }
       const updatedProducts: { id: string; qty: number }[] = [];
 
       try {

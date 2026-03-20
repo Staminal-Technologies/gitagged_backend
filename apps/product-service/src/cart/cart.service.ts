@@ -34,44 +34,7 @@ export class CartService {
         if (product.stock <= 0) {
             throw new BadRequestException('Product is out of stock');
         }
-        // if (quantity > product.stock) {
-        //     throw new BadRequestException(`only ${product.stock} items are available!!`)
-        // }
 
-        // const sellerId = product.sellerId;
-        // let cart = await this.cartModel.findOne({ userId: uId });
-
-        // // 🆕 Create cart if not exists
-        // if (!cart) {
-        //     return this.cartModel.create({
-        //         userId: uId,
-        //         items: [
-        //             {
-        //                 productId: pId,
-        //                 sellerId,
-        //                 quantity,
-        //                 price: product.price,
-        //             },
-        //         ],
-        //     });
-        // }
-
-        // // 🔍 Check if item exists
-        // const existingItem = cart.items.find(
-        //     (item) => item.productId.toString() === pId.toString(),
-        // );
-
-        // if (existingItem) {
-        //     existingItem.quantity += quantity;
-        // } 
-        // else {
-        //     cart.items.push({
-        //         productId: pId,
-        //         sellerId,
-        //         quantity,
-        //         price: product.price,
-        //     });
-        // }
         let cart = await this.cartModel.findOne({ userId: uId });
 
         // 🆕 Create cart
