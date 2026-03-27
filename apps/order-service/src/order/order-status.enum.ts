@@ -1,6 +1,5 @@
 export enum OrderStatus {
   PLACED = 'PLACED',
-  PAID = 'PAID',
   SHIPPED = 'SHIPPED',
   DELIVERED = 'DELIVERED',
   CANCELLED = 'CANCELLED',
