@@ -7,6 +7,7 @@ import { Category, CategorySchema } from '../categories/schema/category.schema';
 import { SellerJwtStrategy } from '../strategy/seller-jwt.strategy';
 import { Seller, SellerSchema } from '../schema/seller.schema';
 import { PassportModule } from '@nestjs/passport';
+import { MailModule} from '../common/mail/mail.module';
 
 @Module({
     imports: [
@@ -16,6 +17,7 @@ import { PassportModule } from '@nestjs/passport';
               { name: Category.name, schema: CategorySchema }, 
               { name: Seller.name, schema: SellerSchema }
         ]), 
+        MailModule,
     ],
     controllers: [ProductsController],
     providers: [ProductsService, SellerJwtStrategy],

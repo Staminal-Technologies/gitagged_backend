@@ -59,6 +59,15 @@ export class Seller {
 
   @Prop({ type: String, enum: roleStatus, default: roleStatus.SELLER })
   role: roleStatus;
+
+  @Prop({ required: true })
+  productDescription: string;
+
+  @Prop({ type: Object, default: null })
+  pendingProfileUpdates: any;
+
+  @Prop({ default: false })
+  isProfileUpdatePending: boolean;
 }
 
 export const SellerSchema = SchemaFactory.createForClass(Seller);

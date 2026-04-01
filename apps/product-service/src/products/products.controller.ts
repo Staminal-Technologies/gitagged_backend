@@ -2,7 +2,6 @@ import { Controller, Get, Param, Post, Body, Patch, Put, UseGuards, Delete, UseI
 import { ProductsService } from './products.service';
 import { Express } from 'express';
 import { memoryStorage } from 'multer';
-import { AdminJwtGuard } from '../common/guards/admin-jwt.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
 import cloudinary, { configureCloudinary } from '../common/cloudinary/cloudinary.config'
@@ -23,6 +22,11 @@ export class ProductsController {
     return this.service.findByParentCategory(parentId);
   }
 
+   @Get('pending')
+  getPendingProducts() {
+    return this.service.getPendingProducts();
+  }
+
   @Get(':id')
   async getOne(@Param('id') id: string) {
     return this.service.findById(id);
@@ -38,28 +42,24 @@ export class ProductsController {
     return this.service.findByGIRegion(regionId);
   }
 
-  // @UseGuards(AdminJwtGuard)
   @UseGuards(AuthGuard('user-jwt'))
   @Post()
   async create(@Req() req, @Body() body: any) {
     return this.service.create(body, req.user);
   }
 
-  // @UseGuards(AdminJwtGuard)
   @UseGuards(AuthGuard('user-jwt'))
   @Put(':id')
   async update(@Param('id') id: string, @Body() body: any, @Req() req) {
     return this.service.update(id, body, req.user);
   }
 
-  // @UseGuards(AdminJwtGuard)
   @UseGuards(AuthGuard('user-jwt'))
   @Delete(':id')
   async remove(@Param('id') id: string, @Req() req) {
     return this.service.remove(id, req.user);
   }
 
-  // @UseGuards(AdminJwtGuard)
   @UseGuards(AuthGuard('user-jwt'))
   @Post('upload-image')
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
@@ -107,6 +107,26 @@ export class ProductsController {
   getMyProducts(@Req() req) {
     console.log("SELLER USER:", req.user);
     return this.service.getSellerProducts(req.user.sub.toString());
+  }
+
+  @Patch(':id/approve')
+  approveProduct(@Param('id') id: string) {
+    return this.service.approveProduct(id);
+  }
+
+  @Patch(':id/reject')
+  rejectProduct(@Param('id') id: string) {
+    return this.service.rejectProduct(id);
+  }
+
+  @Patch(':id/approve-update')
+  approveUpdate(@Param('id') id: string) {
+    return this.service.approveProductUpdate(id);
+  }
+
+  @Patch(':id/reject-update')
+  rejectUpdate(@Param('id') id: string) {
+    return this.service.rejectProductUpdate(id);
   }
 
 }

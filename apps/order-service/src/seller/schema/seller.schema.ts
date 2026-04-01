@@ -60,13 +60,14 @@ export class Seller {
   @Prop({ type: String, enum: roleStatus, default: roleStatus.SELLER })
   role: roleStatus;
 
-  //for the seller restriction..
-  // @Prop()
-  // selectedRegion: String;
+  @Prop({ required: true })
+  productDescription: string;
 
-  // @Prop()
-  // selectedCategory: String;
+  @Prop({ type: Object, default: null })
+  pendingProfileUpdates: any;
 
+  @Prop({ default: false })
+  isProfileUpdatePending: boolean;
 }
 
 export const SellerSchema = SchemaFactory.createForClass(Seller);

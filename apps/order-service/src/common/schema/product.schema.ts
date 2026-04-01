@@ -51,6 +51,15 @@ export class Product {
 
     @Prop({ default: 0 })
     reviewCount: number;
+
+    @Prop({ default: false })
+    isApproved: boolean;
+
+    @Prop({ type: Object, default: null })
+    pendingUpdates: any;
+
+    @Prop({ default: false })
+    isUpdatePending: boolean;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);

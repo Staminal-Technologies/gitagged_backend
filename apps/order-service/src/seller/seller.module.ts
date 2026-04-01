@@ -5,6 +5,7 @@ import { User, UserSchema } from '../common/schema/user.schema';
 import { SellerController } from './seller.controller';
 import { SellerService } from './seller.service';
 import { SellerJwtStrategy } from '../seller-auth/seller-jwt.strategy';
+import { MailModule } from '../common/mail/mail.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { SellerJwtStrategy } from '../seller-auth/seller-jwt.strategy';
       { name: Seller.name, schema: SellerSchema },
       { name: User.name, schema: UserSchema },
     ]),
+    MailModule,
   ],
   controllers: [SellerController],
   providers: [SellerService, SellerJwtStrategy],

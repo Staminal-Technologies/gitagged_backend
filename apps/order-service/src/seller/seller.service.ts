@@ -6,12 +6,14 @@ import { approvalStatus } from './seller-status.enum';
 import { User, UserDocument } from '../common/schema/user.schema';
 import { UserStatus } from '../common/enum/user-status.enum';
 import * as bcrypt from 'bcryptjs';
+import { MailService } from '../common/mail/mail.service';
 
 @Injectable()
 export class SellerService {
   constructor(
     @InjectModel(Seller.name) private sellerModel: Model<SellerDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private mailService:MailService,
   ) { }
 
   // 🟢 USER APPLY TO BECOME SELLER
@@ -31,6 +33,8 @@ export class SellerService {
       password: hashedPassword,
       status: 'PENDING',
     });
+
+    await this.mailService.sendSellerRequestEmail(seller);
 
     return {
       message: 'Seller application submitted successfully',
@@ -53,37 +57,6 @@ export class SellerService {
       .find()
       .populate('userId', 'name phone email')
       .sort({ createdAt: -1 });
-  }
-
-  // 🟢 ADMIN APPROVE SELLER
-  async approveSeller(sellerId: string) {
-    const seller = await this.sellerModel.findById(sellerId);
-
-    if (!seller) throw new NotFoundException('Seller not found');
-
-    seller.status = approvalStatus.APPROVED;
-    seller.isActive = true;
-    await seller.save();
-
-    // 🔁 Update user role to SELLER
-    await this.userModel.findByIdAndUpdate(seller.userId, {
-      role: UserStatus.SELLER,
-    });
-
-    return { message: 'Seller approved successfully' };
-  }
-
-  // 🔴 ADMIN REJECT SELLER
-  async rejectSeller(sellerId: string) {
-    const seller = await this.sellerModel.findById(sellerId);
-
-    if (!seller) throw new NotFoundException('Seller not found');
-
-    seller.status = approvalStatus.REJECTED;
-    seller.isActive = false;
-    await seller.save();
-
-    return { message: 'Seller rejected successfully' };
   }
 
   // update seller status
