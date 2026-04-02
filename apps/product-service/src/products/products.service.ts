@@ -58,9 +58,6 @@ export class ProductsService {
     }
     async create(data: any, user: any) {
 
-        // if (user.role === 'ADMIN') {
-        //     return this.productModel.create(data);
-        // }
         if (user.role === 'SELLER') {
             const product = await this.productModel.create({
                 ...data,
@@ -100,6 +97,12 @@ export class ProductsService {
             product.isUpdatePending = true;
 
             await product.save();
+
+            const fullProduct = await this.productModel
+                .findById(product._id)
+                .populate('sellerId', 'sellerName email');
+
+            await this.mailService.sendProductUpdateRequestEmail(fullProduct);
 
             return { message: 'Update sent for admin approval' };
         }
@@ -199,6 +202,7 @@ export class ProductsService {
         if (!product) throw new NotFoundException();
 
         product.approveStatus = ProductApproveStatus.APPROVED;
+        product.status = 'active';
 
         await product.save();
 
@@ -206,9 +210,17 @@ export class ProductsService {
     }
 
     async rejectProduct(productId: string) {
-        await this.productModel.findByIdAndDelete(productId);
 
-        return { message: 'Product rejected and removed' };
+        const product = await this.productModel.findById(productId);
+
+        if (!product) throw new NotFoundException();
+
+        product.approveStatus = ProductApproveStatus.REJECTED;
+        product.status = 'inactive';
+
+        await product.save();
+
+        return { message: 'Product rejected' };
     }
 
     async approveProductUpdate(productId: string) {
@@ -220,7 +232,8 @@ export class ProductsService {
 
         product.pendingUpdates = null;
         product.isUpdatePending = false;
-
+        product.status = 'active';
+        product.approveStatus = ProductApproveStatus.APPROVED;
         await product.save();
 
         return { message: 'Product update approved' };
@@ -238,7 +251,12 @@ export class ProductsService {
     }
 
     async getPendingProducts() {
-        return this.productModel.find({ approveStatus: ProductApproveStatus.PENDING })
+        return this.productModel.find({
+            $or: [
+                { approveStatus: 'PENDING' },
+                { isUpdatePending: true }
+            ]
+        })
             .populate('sellerId', 'sellerName email')
             .populate('categories', 'name')
             .lean();

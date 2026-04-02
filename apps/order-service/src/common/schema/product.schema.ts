@@ -43,7 +43,7 @@ export class Product {
     @Prop({ type: [MongooseSchema.Types.ObjectId], ref: 'GIRegion', default: [] })
     giRegions: Types.ObjectId[];
 
-    @Prop({ default: 'active' })
+    @Prop({ default: 'inactive' })
     status: string; // active | inactive
 
     @Prop({ default: 0 })

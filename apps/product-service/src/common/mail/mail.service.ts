@@ -4,24 +4,24 @@ import * as nodemailer from 'nodemailer';
 @Injectable()
 export class MailService {
 
-    private transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-        },
-    });
+  private transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
 
-    async sendSellerRequestEmail(seller: any) {
-        const adminEmail = process.env.EMAIL_USER;
+  async sendSellerRequestEmail(seller: any) {
+    const adminEmail = process.env.EMAIL_USER;
 
-        const link = `http://localhost:3000/login?redirect=/dashboard/sellers?status=pending`;
+    const link = `http://localhost:3000/login?redirect=/dashboard/sellers?status=pending`;
 
-        await this.transporter.sendMail({
-            from: `"Gitagged App" <${process.env.EMAIL_USER}>`,
-            to: adminEmail,
-            subject: 'New Seller Request',
-            html: `
+    await this.transporter.sendMail({
+      from: `"Gitagged App" <${process.env.EMAIL_USER}>`,
+      to: adminEmail,
+      subject: 'New Seller Request',
+      html: `
        <div style="font-family: Arial, sans-serif; background:#f4f6f8; padding:20px;">
     
         <div style="max-width:600px; margin:auto; background:#ffffff; border-radius:10px; overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,0.1);">
@@ -60,20 +60,20 @@ export class MailService {
     </div>
   </div>
 `,
-        });
-    }
+    });
+  }
 
-    async sendProductRequestEmail(product: any) {
+  async sendProductRequestEmail(product: any) {
 
-        const adminEmail = process.env.EMAIL_USER;
+    const adminEmail = process.env.EMAIL_USER;
 
-        const link = `http://localhost:3000/login?redirect=/dashboard/products`;
+    const link = `http://localhost:3000/login?redirect=/dashboard/products`;
 
-        await this.transporter.sendMail({
-            from: `"Gitagged App" <${process.env.EMAIL_USER}>`,
-            to: adminEmail,
-            subject: 'New Product Request',
-            html: `
+    await this.transporter.sendMail({
+      from: `"Gitagged App" <${process.env.EMAIL_USER}>`,
+      to: adminEmail,
+      subject: 'New Product Request',
+      html: `
       <div style="font-family: Arial; background:#f4f6f8; padding:20px;">
         <div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 10px rgba(0,0,0,0.1);">
 
@@ -105,6 +105,38 @@ export class MailService {
         </div>
       </div>
     `,
-        });
-    }
+    });
+  }
+
+  async sendProductUpdateRequestEmail(product: any) {
+
+    const adminEmail = process.env.EMAIL_USER;
+
+    const link = `http://localhost:3000/login?redirect=/dashboard/product-approval`;
+
+    await this.transporter.sendMail({
+      from: `"Gitagged App" <${process.env.EMAIL_USER}>`,
+      to: adminEmail,
+      subject: 'Product Update Request',
+      html: `
+      <div style="font-family: Arial; background:#f4f6f8; padding:20px;">
+        <div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;padding:20px;">
+          
+          <h2>Product Update Request 🔄</h2>
+
+          <p><strong>Product:</strong> ${product.title}</p>
+          <p><strong>Seller:</strong> ${product.sellerName}</p>
+
+          <br/>
+
+          <a href="${link}" 
+             style="background:black;color:white;padding:10px 20px;text-decoration:none;border-radius:6px;">
+             Review Update
+          </a>
+
+        </div>
+      </div>
+    `,
+    });
+  }
 }
