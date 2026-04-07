@@ -15,8 +15,22 @@ export class User extends Document {
   @Prop({ required: false })
   email: string;
 
-  @Prop({ type: [String], required: true })
-  address: string[];
+  @Prop([
+    {
+      addressLine: { type: String, required: true },
+      city: { type: String },
+      state: { type: String },
+      pincode: { type: String },
+      isDefault: { type: Boolean, default: false },
+    },
+  ])
+  address: {
+    addressLine: string;
+    city?: string;
+    state?: string;
+    pincode?: string;
+    isDefault?: boolean;
+  }[];
 
   @Prop({ type: Boolean, default: false })
   isBlocked: boolean;

@@ -83,7 +83,7 @@ export class UsersController {
       firebaseToken: string;
       name: string;
       email: string;
-      address: string[];
+      address: any[];
     }
   ) {
     const decoded = await this.firebaseService.verifyToken(body.firebaseToken);
@@ -103,6 +103,20 @@ export class UsersController {
     });
 
     return { token: jwt, user };
+  }
+
+  @UseGuards(UserJwtGuard)
+  @Post('address')
+  addAddress(
+    @Req() req,
+    @Body() body: {
+      addressLine: string;
+      city?: string;
+      state?: string;
+      pincode?: string;
+    }
+  ) {
+    return this.usersService.addAddress(req.user.sub, body);
   }
 
 }

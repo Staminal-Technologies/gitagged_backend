@@ -25,7 +25,7 @@ export class UsersService {
     name: string;
     phone: string;
     email: string;
-    address: string[];
+    address: any[];
   }) {
 
     // 1️⃣ Check if user already exists by phone
@@ -95,7 +95,7 @@ export class UsersService {
   async updateProfile(userId: string, data: {
     name: string;
     email: string;
-    address: string[];
+    address: any;
   }) {
     let user = await this.userModel.findById(userId);
 
@@ -105,9 +105,34 @@ export class UsersService {
 
     user.name = data.name;
     user.email = data.email;
-    user.address = data.address;
+    if(data.address){
+      user.address= data.address;
+    }
 
     return user.save();
+  }
+
+  async addAddress(userId: string, addressData: any) {
+    const user = await this.userModel.findById(userId);
+
+    if (!user) throw new NotFoundException('User not found');
+
+    // ✅ Add new address
+    const exists = user.address.some(
+      a =>
+        a.addressLine === addressData.addressLine &&
+        a.pincode === addressData.pincode
+    );
+
+    if (!exists) {
+      user.address.push(addressData);
+    }
+    await user.save();
+
+    return {
+      message: 'Address added successfully',
+      addresses: user.address,
+    };
   }
 
 }
