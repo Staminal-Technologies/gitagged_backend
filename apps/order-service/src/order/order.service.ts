@@ -24,6 +24,8 @@ export class OrderService {
       city?: string;
       state?: string;
       pincode?: string;
+      lat?:number;
+      lng?:number;
     },
     saveAddress: boolean
   }) {
@@ -139,7 +141,7 @@ export class OrderService {
         await this.userModel.findByIdAndUpdate(
           userId,
           {
-            $push: {
+            $addToSet: {
               address: {
                 // name: checkoutData.receiverName,
                 // phone: checkoutData.receiverPhone,
@@ -147,6 +149,8 @@ export class OrderService {
                 city: checkoutData.receiverAddress.city,
                 state: checkoutData.receiverAddress.state,
                 pincode: checkoutData.receiverAddress.pincode,
+                lat:checkoutData.receiverAddress.lat,
+                lng:checkoutData.receiverAddress.lng,
               },
             },
             // $addToSet: {

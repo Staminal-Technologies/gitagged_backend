@@ -18,9 +18,11 @@ export class User extends Document {
   @Prop([
     {
       addressLine: { type: String, required: true },
-      city: { type: String },
-      state: { type: String },
-      pincode: { type: String },
+      city: { type: String, requiredL: true },
+      state: { type: String, required: true },
+      pincode: { type: String, required: true },
+      lat: { type: Number, required: true },
+      lng: { type: Number, required: true },
       isDefault: { type: Boolean, default: false },
     },
   ])
@@ -29,6 +31,8 @@ export class User extends Document {
     city?: string;
     state?: string;
     pincode?: string;
+    lat: Number;
+    lng: Number;
     isDefault?: boolean;
   }[];
 

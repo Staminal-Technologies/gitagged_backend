@@ -25,6 +25,26 @@ export class UsersController {
     return this.usersService.findByPhone(req.user.phone);
   }
 
+  @UseGuards(UserJwtGuard)
+  @Post('address')
+  addAddress(
+    @Req() req,
+    @Body() body: {
+      addressLine: string;
+      city?: string;
+      state?: string;
+      pincode?: string;
+    }
+  ) {
+    return this.usersService.addAddress(req.user.sub, body);
+  }
+
+  @UseGuards(UserJwtGuard)
+  @Get('address')
+  getAddresses(@Req() req) {
+    return this.usersService.getAddresses(req.user.sub);
+  }
+
   @Get(':id')
   getUser(@Param('id') id: string) {
     return this.usersService.findById(id);
@@ -103,20 +123,6 @@ export class UsersController {
     });
 
     return { token: jwt, user };
-  }
-
-  @UseGuards(UserJwtGuard)
-  @Post('address')
-  addAddress(
-    @Req() req,
-    @Body() body: {
-      addressLine: string;
-      city?: string;
-      state?: string;
-      pincode?: string;
-    }
-  ) {
-    return this.usersService.addAddress(req.user.sub, body);
   }
 
 }
