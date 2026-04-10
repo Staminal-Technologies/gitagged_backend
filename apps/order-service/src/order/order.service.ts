@@ -16,7 +16,19 @@ export class OrderService {
     private httpService: HttpService,
   ) { }
 
-  async placeOrder(userId: string, token: string, checkoutData: { receiverName: string, receiverPhone: string, receiverAddress: string, saveAddress: boolean }) {
+  async placeOrder(userId: string, token: string, checkoutData: {
+    receiverName: string,
+    receiverPhone: string,
+    receiverAddress: {
+      addressLine: string;
+      city?: string;
+      state?: string;
+      pincode?: string;
+      lat?:number;
+      lng?:number;
+    },
+    saveAddress: boolean
+  }) {
     try {
       const cartRes = await firstValueFrom(
         this.httpService.get('http://localhost:3002/cart', {
@@ -130,8 +142,20 @@ export class OrderService {
           userId,
           {
             $addToSet: {
-              address: checkoutData.receiverAddress,
+              address: {
+                // name: checkoutData.receiverName,
+                // phone: checkoutData.receiverPhone,
+                addressLine: checkoutData.receiverAddress.addressLine,
+                city: checkoutData.receiverAddress.city,
+                state: checkoutData.receiverAddress.state,
+                pincode: checkoutData.receiverAddress.pincode,
+                lat:checkoutData.receiverAddress.lat,
+                lng:checkoutData.receiverAddress.lng,
+              },
             },
+            // $addToSet: {
+            //   address: checkoutData.receiverAddress,
+            // },
           },
         );
       }
@@ -150,8 +174,14 @@ export class OrderService {
       return order;
 
     } catch (err) {
-      console.error('Order-service cart call failed:', err.response?.data || err.message);
-      throw err;
+      const error = err as any;
+
+      console.error(
+        'Order-service cart call failed:',
+        error?.response?.data || error?.message || error
+      );
+
+      throw error;
     }
   }
 

@@ -15,8 +15,26 @@ export class User extends Document {
   @Prop({ required: false })
   email: string;
 
-  @Prop({ type: [String], required: true })
-  address: string[];
+  @Prop([
+    {
+      addressLine: { type: String, required: true },
+      city: { type: String, requiredL: true },
+      state: { type: String, required: true },
+      pincode: { type: String, required: true },
+      lat: { type: Number, required: true },
+      lng: { type: Number, required: true },
+      isDefault: { type: Boolean, default: false },
+    },
+  ])
+  address: {
+    addressLine: string;
+    city?: string;
+    state?: string;
+    pincode?: string;
+    lat: Number;
+    lng: Number;
+    isDefault?: boolean;
+  }[];
 
   @Prop({ type: Boolean, default: false })
   isBlocked: boolean;
@@ -29,3 +47,4 @@ export class User extends Document {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+

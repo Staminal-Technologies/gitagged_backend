@@ -4,7 +4,7 @@ import { Schema as MongooseSchema, Types } from 'mongoose';
 @Schema({ timestamps: true })
 export class Product {
     @Prop({ required: true, unique: true })
-    slug: string; // slug ID like prod-mysore-silk-saree-01
+    slug: string;
 
     @Prop({ type: Types.ObjectId, ref: 'Seller', required: true })
     sellerId: Types.ObjectId;
@@ -43,14 +43,23 @@ export class Product {
     @Prop({ type: [MongooseSchema.Types.ObjectId], ref: 'GIRegion', default: [] })
     giRegions: Types.ObjectId[];
 
-    @Prop({ default: 'active' })
-    status: string; // active | inactive
+    @Prop({ default: 'inactive' })
+    status: string; // active | inactive 
 
     @Prop({ default: 0 })
     rating: number;
 
     @Prop({ default: 0 })
     reviewCount: number;
+
+    @Prop({ default: 'PENDING' })
+    approveStatus: string;
+
+    @Prop({ type: Object, default: null })
+    pendingUpdates: any;
+
+    @Prop({ default: false })
+    isUpdatePending: boolean;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);

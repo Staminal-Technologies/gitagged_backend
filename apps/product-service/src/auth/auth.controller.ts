@@ -9,25 +9,11 @@ export class AuthController {
     private firebaseService: FirebaseService,
     private authService: AuthService) { }
 
-  // @Post('register')
-  // register(@Body() dto: any) {
-  //   return this.authService.register(dto);
-  // }
-
-  // @Post('login')
-  // login(@Body('phone') phone: string) {
-  //   return this.authService.checkPhone(phone);
-  // }
-
   @Post('otp-login')
   async otpLogin(@Body() body: OtpLoginDto) {
     return this.authService.otpLogin(body);
   }
 
-  // @Post('login')
-  // login(@Body() body: any) {
-  //   return this.authService.login(body.email, body.password);
-  // }
   @Post('login')
   async login(@Body() body: { identifier: string; password: string }) {
     return this.authService.login(body.identifier, body.password);
@@ -43,16 +29,6 @@ export class AuthController {
       phoneNumber: decoded.phone_number,
     };
   }
-
-  // @Post('reset-password')
-  // async resetPassword(
-  //   @Body() body: {
-  //     phone: string;
-  //     newPassword: string;
-  //   },
-  // ) {
-  //   return this.authService.resetPassword(body.phone, body.newPassword);
-  // }
 
   @Post('reset-password')
   async resetPassword(

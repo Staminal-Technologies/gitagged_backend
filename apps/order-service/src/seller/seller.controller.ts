@@ -32,14 +32,16 @@ export class SellerController {
   @UseGuards(AdminJwtGuard)
   @Patch(':id/approve')
   approve(@Param('id') id: string) {
-    return this.sellerService.approveSeller(id);
+    // return this.sellerService.approveSeller(id);
+    return this.sellerService.updateSellerStatus(id, 'APPROVED');
   }
 
   // 🔴 ADMIN REJECT
   @UseGuards(AdminJwtGuard)
   @Patch(':id/reject')
   reject(@Param('id') id: string) {
-    return this.sellerService.rejectSeller(id);
+    // return this.sellerService.rejectSeller(id);
+    return this.sellerService.updateSellerStatus(id, 'REJECTED');
   }
 
   @UseGuards(AdminJwtGuard)

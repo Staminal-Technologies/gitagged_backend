@@ -5,18 +5,24 @@ import { Product, ProductDocument } from './schema/product.schema';
 import slugify from 'slugify';
 import { Category, CategoryDocument } from '../categories/schema/category.schema';
 import cloudinary from '../common/cloudinary/cloudinary.config';
+import { MailService } from '../common/mail/mail.service';
+import { ProductApproveStatus } from '../enum/product-approve-status.enum';
 
 @Injectable()
 export class ProductsService {
     constructor(
         @InjectModel(Product.name) private productModel: Model<ProductDocument>,
         @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
+        private mailService: MailService,
     ) { }
 
     async findAll(user: any) {
 
-        if (!user) {
-            throw new UnauthorizedException('User not found in request');
+        if (!user || user.role === 'USER') {
+            return this.productModel.find({ status: 'active', approveStatus: ProductApproveStatus.APPROVED, })
+                .populate('categories', 'name')
+                .populate('giRegions', 'name')
+                .lean();
         }
 
         if (user.role === 'ADMIN') {
@@ -35,29 +41,36 @@ export class ProductsService {
     }
 
     async findById(id: string) {
-        return this.productModel.findById(id).lean();
+        const product = await this.productModel.findById(id).lean();
+
+        if (!product || product.status !== 'active') {
+            throw new NotFoundException('Product not available');
+        }
+        return product;
     }
 
     async findByCategory(categoryId: string) {
-        return this.productModel.find({ categories: categoryId }).lean();
+        return this.productModel.find({ categories: categoryId, status: 'active' }).lean();
     }
 
     async findByGIRegion(regionId: string) {
-        return this.productModel.find({ giRegions: regionId }).lean();
+        return this.productModel.find({ giRegions: regionId, status: 'active' }).lean();
     }
     async create(data: any, user: any) {
 
-        if (user.role === 'ADMIN') {
-            return this.productModel.create(data);
-        }
-
         if (user.role === 'SELLER') {
-            return this.productModel.create({
+            const product = await this.productModel.create({
                 ...data,
                 sellerId: user.sub,
+                approveStatus: ProductApproveStatus.PENDING,
             });
-        }
 
+            // Send email to admin for approval
+            await this.mailService.sendProductRequestEmail(product);
+
+            return product;
+
+        }
         throw new UnauthorizedException();
     }
 
@@ -76,7 +89,22 @@ export class ProductsService {
                 throw new ForbiddenException('Not your product');
             }
 
-            return this.productModel.findByIdAndUpdate(id, data, { new: true });
+            if (product.isUpdatePending) {
+                throw new BadRequestException('Already pending approval');
+            }
+
+            product.pendingUpdates = data;
+            product.isUpdatePending = true;
+
+            await product.save();
+
+            const fullProduct = await this.productModel
+                .findById(product._id)
+                .populate('sellerId', 'sellerName email');
+
+            await this.mailService.sendProductUpdateRequestEmail(fullProduct);
+
+            return { message: 'Update sent for admin approval' };
         }
     }
 
@@ -143,6 +171,7 @@ export class ProductsService {
 
         return this.productModel.find({
             categories: { $in: categoryIds },
+            status: 'active',
         }).lean();
     }
 
@@ -165,6 +194,72 @@ export class ProductsService {
 
     async getSellerProducts(sellerId: string) {
         return this.productModel.find({ sellerId }).populate('categories').populate('giRegions');
+    }
+
+    async approveProduct(productId: string) {
+        const product = await this.productModel.findById(productId);
+
+        if (!product) throw new NotFoundException();
+
+        product.approveStatus = ProductApproveStatus.APPROVED;
+        product.status = 'active';
+
+        await product.save();
+
+        return { message: 'Product approved successfully' };
+    }
+
+    async rejectProduct(productId: string) {
+
+        const product = await this.productModel.findById(productId);
+
+        if (!product) throw new NotFoundException();
+
+        product.approveStatus = ProductApproveStatus.REJECTED;
+        product.status = 'inactive';
+
+        await product.save();
+
+        return { message: 'Product rejected' };
+    }
+
+    async approveProductUpdate(productId: string) {
+        const product = await this.productModel.findById(productId);
+
+        if (!product) throw new NotFoundException();
+
+        Object.assign(product, product.pendingUpdates);
+
+        product.pendingUpdates = null;
+        product.isUpdatePending = false;
+        product.status = 'active';
+        product.approveStatus = ProductApproveStatus.APPROVED;
+        await product.save();
+
+        return { message: 'Product update approved' };
+    }
+
+    async rejectProductUpdate(productId: string) {
+        const product = await this.productModel.findById(productId);
+
+        product.pendingUpdates = null;
+        product.isUpdatePending = false;
+
+        await product.save();
+
+        return { message: 'Update rejected' };
+    }
+
+    async getPendingProducts() {
+        return this.productModel.find({
+            $or: [
+                { approveStatus: 'PENDING' },
+                { isUpdatePending: true }
+            ]
+        })
+            .populate('sellerId', 'sellerName email')
+            .populate('categories', 'name')
+            .lean();
     }
 
 }
