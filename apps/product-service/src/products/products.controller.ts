@@ -22,7 +22,7 @@ export class ProductsController {
     return this.service.findByParentCategory(parentId);
   }
 
-   @Get('pending')
+  @Get('pending')
   getPendingProducts() {
     return this.service.getPendingProducts();
   }
@@ -89,18 +89,32 @@ export class ProductsController {
   @Patch(':id/reduce-stock')
   reduceStock(
     @Param('id') id: string,
-    @Body() body: { quantity: number },
+    @Body() body: { quantity: number; variant: string[] },
   ) {
-    return this.service.reduceStock(id, body.quantity);
+    return this.service.reduceStock(id, body.variant, body.quantity);
   }
+  // @Patch(':id/reduce-stock')
+  // reduceStock(
+  //   @Param('id') id: string,
+  //   @Body() body: { quantity: number },
+  // ) {
+  //   return this.service.reduceStock(id, body.quantity);
+  // }
 
   @Patch(':id/restore-stock')
   restoreStock(
     @Param('id') id: string,
-    @Body() body: { quantity: number },
+    @Body() body: { quantity: number; variant: string[] },
   ) {
-    return this.service.restoreStock(id, body.quantity);
+    return this.service.restoreStock(id, body.variant, body.quantity);
   }
+  // @Patch(':id/restore-stock')
+  // restoreStock(
+  //   @Param('id') id: string,
+  //   @Body() body: { quantity: number },
+  // ) {
+  //   return this.service.restoreStock(id, body.quantity);
+  // }
 
   @UseGuards(SellerJwtGuard)
   @Get('seller/my-products')

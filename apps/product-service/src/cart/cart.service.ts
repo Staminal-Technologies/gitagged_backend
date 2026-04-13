@@ -29,19 +29,32 @@ export class CartService {
         const uId = new Types.ObjectId(userId);
         const pId = new Types.ObjectId(productId);
 
-        const product = await this.productModel.findById(pId).select('stock price sellerId');
+        // const product = await this.productModel.findById(pId).select('stock price sellerId');
+        const product = await this.productModel.findById(pId).select('sellerId');
+
         if (!product) throw new NotFoundException('Product not found');
-        if (product.stock <= 0) {
+
+        const variant = product.variants?.[0];
+        if (!variant) {
+            throw new BadRequestException('Variant not found');
+        }
+
+        if (variant.stock <= 0) {
             throw new BadRequestException('Product is out of stock');
         }
+        // if (product.stock <= 0) {
+        //     throw new BadRequestException('Product is out of stock');
+        // }
 
         let cart = await this.cartModel.findOne({ userId: uId });
 
         // 🆕 Create cart
         if (!cart) {
-            if (quantity > product.stock) {
+            // if (quantity > product.stock) {
+            if (quantity > variant.stock) {
                 throw new BadRequestException(
-                    `Only ${product.stock} items available`,
+                    `Only ${variant.stock} items available`,
+                    // `Only ${product.stock} items available`,
                 );
             }
 
@@ -52,7 +65,8 @@ export class CartService {
                         productId: pId,
                         sellerId: product.sellerId,
                         quantity,
-                        price: product.price,
+                        price: variant.price,
+                        // price: product.price,
                     },
                 ],
             });
@@ -65,17 +79,21 @@ export class CartService {
         if (existingItem) {
             const newQty = existingItem.quantity + quantity;
 
-            if (newQty > product.stock) {
+            // if (newQty > product.stock) {
+            if (newQty > variant.stock) {
                 throw new BadRequestException(
-                    `Only ${product.stock} items available`,
+                    // `Only ${product.stock} items available`,
+                    `Only ${variant.stock} items available`,
                 );
             }
 
             existingItem.quantity = newQty;
         } else {
-            if (quantity > product.stock) {
+            // if (quantity > product.stock) {
+            if (quantity > variant.stock) {
                 throw new BadRequestException(
-                    `Only ${product.stock} items available`,
+                    // `Only ${product.stock} items available`,
+                    `Only ${variant.stock} items available`,
                 );
             }
 
@@ -83,7 +101,8 @@ export class CartService {
                 productId: pId,
                 sellerId: product.sellerId,
                 quantity,
-                price: product.price,
+                // price: product.price,
+                price: variant.price,
             });
         }
 
@@ -121,21 +140,40 @@ export class CartService {
         if (!item) throw new NotFoundException('Item not found');
 
         // item.quantity = quantity;
-        const product = await this.productModel
-            .findById(pId)
-            .select('stock');
+        // const product = await this.productModel
+        //     .findById(pId)
+        //     .select('stock');
+        const product = await this.productModel.findById(pId);
 
         if (!product) throw new NotFoundException('Product not found');
 
-        if (product.stock <= 0) {
+        const variant = product.variants?.[0];
+
+        if (!variant) {
+            throw new BadRequestException('Variant not found');
+        }
+
+        if (variant.stock <= 0) {
             throw new BadRequestException('Product is out of stock');
         }
 
-        if (quantity > product.stock) {
+        if (quantity > variant.stock) {
             throw new BadRequestException(
-                `Only ${product.stock} items available`,
+                `Only ${variant.stock} items available`,
             );
         }
+
+        // if (!product) throw new NotFoundException('Product not found');
+
+        // if (product.stock <= 0) {
+        //     throw new BadRequestException('Product is out of stock');
+        // }
+
+        // if (quantity > product.stock) {
+        //     throw new BadRequestException(
+        //         `Only ${product.stock} items available`,
+        //     );
+        // }
 
         item.quantity = quantity;
 

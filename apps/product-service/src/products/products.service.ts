@@ -56,23 +56,60 @@ export class ProductsService {
     async findByGIRegion(regionId: string) {
         return this.productModel.find({ giRegions: regionId, status: 'active' }).lean();
     }
+
     async create(data: any, user: any) {
 
-        if (user.role === 'SELLER') {
-            const product = await this.productModel.create({
-                ...data,
-                sellerId: user.sub,
-                approveStatus: ProductApproveStatus.PENDING,
-            });
-
-            // Send email to admin for approval
-            await this.mailService.sendProductRequestEmail(product);
-
-            return product;
-
+        if (user.role !== 'SELLER') {
+            throw new UnauthorizedException();
         }
-        throw new UnauthorizedException();
+
+        // 🔥 CASE 1: NO VARIANTS (simple product)
+        if (!data.variants || data.variants.length === 0) {
+            data.variantOptions = [];
+
+            data.variants = [
+                {
+                    values: ['default'],
+                    price: data.price || 0,
+                    stock: data.stock || 0,
+                    sku: 'DEFAULT'
+                }
+            ];
+        }
+
+        // 🔥 CASE 2: HAS VARIANTS
+        else {
+            data.variants = data.variants.map((v, index) => ({
+                ...v,
+                sku: v.sku || `${data.title.substring(0, 3).toUpperCase()}-${index + 1}`
+            }));
+        }
+
+        const product = await this.productModel.create({
+            ...data,
+            sellerId: user.sub,
+            approveStatus: ProductApproveStatus.PENDING,
+        });
+
+        return product;
     }
+    // async create(data: any, user: any) {
+
+    //     if (user.role === 'SELLER') {
+    //         const product = await this.productModel.create({
+    //             ...data,
+    //             sellerId: user.sub,
+    //             approveStatus: ProductApproveStatus.PENDING,
+    //         });
+
+    //         // Send email to admin for approval
+    //         await this.mailService.sendProductRequestEmail(product);
+
+    //         return product;
+
+    //     }
+    //     throw new UnauthorizedException();
+    // }
 
     async update(id: string, data: any, user: any) {
 
@@ -175,22 +212,58 @@ export class ProductsService {
         }).lean();
     }
 
-    async reduceStock(productId: string, qty: number) {
+    async reduceStock(productId: string, variantValues: string[], qty: number) {
         const product = await this.productModel.findById(productId);
+
         if (!product) throw new NotFoundException('Product not found');
-        if (product.stock < qty) throw new BadRequestException('Insufficient stock');
 
-        product.stock -= qty;
-        return product.save();
-    }
-
-    async restoreStock(productId: string, qty: number) {
-        return this.productModel.findByIdAndUpdate(
-            productId,
-            { $inc: { stock: qty } },
-            { new: true },
+        const variant = product.variants.find(v =>
+            JSON.stringify(v.values) === JSON.stringify(variantValues)
         );
+
+        if (!variant) throw new BadRequestException('Variant not found');
+
+        if (variant.stock < qty) {
+            throw new BadRequestException('Insufficient stock');
+        }
+
+        variant.stock -= qty;
+
+        await product.save();
+
+        return product;
     }
+    // async reduceStock(productId: string, qty: number) {
+    //     const product = await this.productModel.findById(productId);
+    //     if (!product) throw new NotFoundException('Product not found');
+    //     if (product.stock < qty) throw new BadRequestException('Insufficient stock');
+
+    //     product.stock -= qty;
+    //     return product.save();
+    // }
+
+    async restoreStock(productId: string, variantValues: string[], qty: number) {
+        const product = await this.productModel.findById(productId);
+
+        const variant = product.variants.find(v =>
+            JSON.stringify(v.values) === JSON.stringify(variantValues)
+        );
+
+        if (!variant) throw new BadRequestException('Variant not found');
+
+        variant.stock += qty;
+
+        await product.save();
+
+        return product;
+    }
+    // async restoreStock(productId: string, qty: number) {
+    //     return this.productModel.findByIdAndUpdate(
+    //         productId,
+    //         { $inc: { stock: qty } },
+    //         { new: true },
+    //     );
+    // }
 
     async getSellerProducts(sellerId: string) {
         return this.productModel.find({ sellerId }).populate('categories').populate('giRegions');

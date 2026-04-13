@@ -1,6 +1,5 @@
 import { Body, Controller, Post , Get, Req, UseGuards} from '@nestjs/common';
 import { SellerAuthService } from './seller-auth.service';
-import { SellerJwtGuard } from '../common/guards/seller-jwt.guards';
 
 @Controller('seller-auth')
 export class SellerAuthController {
