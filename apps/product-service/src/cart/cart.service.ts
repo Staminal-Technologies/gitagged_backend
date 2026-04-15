@@ -6,6 +6,11 @@ import { Product, ProductDocument } from '../products/schema/product.schema';
 
 @Injectable()
 export class CartService {
+
+    private normalize(arr: string[]) {
+        return arr.slice().sort().join('-');
+    }
+
     constructor(
         @InjectModel(Cart.name)
         private cartModel: Model<CartDocument>,
@@ -17,6 +22,7 @@ export class CartService {
     async addToCart(
         userId: string,
         productId: string,
+        variantValues: string[],
         quantity: number,
     ) {
         if (!Types.ObjectId.isValid(productId)) {
@@ -29,32 +35,29 @@ export class CartService {
         const uId = new Types.ObjectId(userId);
         const pId = new Types.ObjectId(productId);
 
-        // const product = await this.productModel.findById(pId).select('stock price sellerId');
-        const product = await this.productModel.findById(pId).select('sellerId');
+        const product = await this.productModel.findById(pId).select('sellerId variants');
 
         if (!product) throw new NotFoundException('Product not found');
 
-        const variant = product.variants?.[0];
-        if (!variant) {
+        const selectedVariant = product.variants.find(v =>
+            this.normalize(v.values) === this.normalize(variantValues)
+        );
+
+        if (!selectedVariant) {
             throw new BadRequestException('Variant not found');
         }
 
-        if (variant.stock <= 0) {
+        if (selectedVariant.stock <= 0) {
             throw new BadRequestException('Product is out of stock');
         }
-        // if (product.stock <= 0) {
-        //     throw new BadRequestException('Product is out of stock');
-        // }
 
         let cart = await this.cartModel.findOne({ userId: uId });
 
         // 🆕 Create cart
         if (!cart) {
-            // if (quantity > product.stock) {
-            if (quantity > variant.stock) {
+            if (quantity > selectedVariant.stock) {
                 throw new BadRequestException(
-                    `Only ${variant.stock} items available`,
-                    // `Only ${product.stock} items available`,
+                    `Only ${selectedVariant.stock} items available`,
                 );
             }
 
@@ -64,45 +67,41 @@ export class CartService {
                     {
                         productId: pId,
                         sellerId: product.sellerId,
+                        variant: variantValues,
                         quantity,
-                        price: variant.price,
-                        // price: product.price,
+                        price: selectedVariant.price,
                     },
                 ],
             });
         }
 
         const existingItem = cart.items.find(
-            (item) => item.productId.toString() === pId.toString(),
+            (item) => item.productId.toString() === pId.toString() && this.normalize(item.variant) === this.normalize(variantValues)
         );
 
         if (existingItem) {
             const newQty = existingItem.quantity + quantity;
 
-            // if (newQty > product.stock) {
-            if (newQty > variant.stock) {
+            if (newQty > selectedVariant.stock) {
                 throw new BadRequestException(
-                    // `Only ${product.stock} items available`,
-                    `Only ${variant.stock} items available`,
+                    `Only ${selectedVariant.stock} items available`,
                 );
             }
 
             existingItem.quantity = newQty;
         } else {
-            // if (quantity > product.stock) {
-            if (quantity > variant.stock) {
+            if (quantity > selectedVariant.stock) {
                 throw new BadRequestException(
-                    // `Only ${product.stock} items available`,
-                    `Only ${variant.stock} items available`,
+                    `Only ${selectedVariant.stock} items available`,
                 );
             }
 
             cart.items.push({
                 productId: pId,
                 sellerId: product.sellerId,
+                variant: variantValues,
                 quantity,
-                // price: product.price,
-                price: variant.price,
+                price: selectedVariant.price,
             });
         }
 
@@ -113,7 +112,7 @@ export class CartService {
     async getUserCart(userId: string) {
         const uId = new Types.ObjectId(userId);
         return this.cartModel
-            .find({ userId: uId })
+            .findOne({ userId: uId })
             .populate('items.productId')
             .lean();
     }
@@ -122,6 +121,7 @@ export class CartService {
     async updateQuantity(
         userId: string,
         productId: string,
+        variantValues: string[],
         quantity: number,
     ) {
         if (quantity <= 0) {
@@ -134,46 +134,28 @@ export class CartService {
         if (!cart) throw new NotFoundException('Cart not found');
 
         const item = cart.items.find(
-            (i) => i.productId.toString() === pId.toString(),
+            (i) => i.productId.toString() === pId.toString() && this.normalize(i.variant)=== this.normalize(variantValues)
         );
 
         if (!item) throw new NotFoundException('Item not found');
 
-        // item.quantity = quantity;
-        // const product = await this.productModel
-        //     .findById(pId)
-        //     .select('stock');
         const product = await this.productModel.findById(pId);
 
         if (!product) throw new NotFoundException('Product not found');
 
-        const variant = product.variants?.[0];
+        const selectedVariant = product.variants.find(v =>
+            this.normalize(v.values) === this.normalize(variantValues)
+        );
 
-        if (!variant) {
+        if (!selectedVariant) {
             throw new BadRequestException('Variant not found');
         }
 
-        if (variant.stock <= 0) {
-            throw new BadRequestException('Product is out of stock');
-        }
-
-        if (quantity > variant.stock) {
+        if (quantity > selectedVariant.stock) {
             throw new BadRequestException(
-                `Only ${variant.stock} items available`,
+                `Only ${selectedVariant.stock} items available`
             );
         }
-
-        // if (!product) throw new NotFoundException('Product not found');
-
-        // if (product.stock <= 0) {
-        //     throw new BadRequestException('Product is out of stock');
-        // }
-
-        // if (quantity > product.stock) {
-        //     throw new BadRequestException(
-        //         `Only ${product.stock} items available`,
-        //     );
-        // }
 
         item.quantity = quantity;
 
@@ -181,7 +163,7 @@ export class CartService {
     }
 
     // Remove item.
-    async removeItem(userId: string, productId: string) {
+    async removeItem(userId: string, productId: string, variantValues: string[]) {
         const uId = new Types.ObjectId(userId);
         const pId = new Types.ObjectId(productId);
 
@@ -189,7 +171,7 @@ export class CartService {
         if (!cart) throw new NotFoundException('Cart not found');
 
         cart.items = cart.items.filter(
-            (item) => item.productId.toString() !== pId.toString(),
+            item => item.productId.toString() !== pId.toString() || this.normalize(item.variant) !== this.normalize(variantValues)
         );
 
         return cart.save();
@@ -203,10 +185,10 @@ export class CartService {
 
     async mergeGuestCart(
         userId: string,
-        guestCart: { productId: string; qty: number }[],
+        guestCart: { productId: string; variant: string[]; qty: number }[],
     ) {
         for (const item of guestCart) {
-            await this.addToCart(userId, item.productId, item.qty);
+            await this.addToCart(userId, item.productId, item.variant || [], item.qty);
         }
     }
 

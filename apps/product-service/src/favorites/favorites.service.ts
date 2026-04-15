@@ -11,6 +11,13 @@ export class FavoritesService {
     ) { }
 
     async add(userId: string, productId: string) {
+        const exists = await this.favoriteModel.findOne({
+            userId,
+            productId,
+        });
+
+        if (exists) return exists;
+
         return this.favoriteModel.create({
             userId: new Types.ObjectId(userId),
             productId: new Types.ObjectId(productId),
@@ -18,13 +25,26 @@ export class FavoritesService {
     }
 
     async getMyFavorites(userId: string) {
-        return this.favoriteModel
+        const data = await this.favoriteModel
             .find({ userId: new Types.ObjectId(userId) })
             .populate({
                 path: 'productId',
-                select: 'title price images categories giRegions',
+                select: 'title images categories giRegions variants',
             })
             .lean();
+
+        return data.map(fav => {
+            const product: any = fav.productId;
+
+            return {
+                ...fav,
+                productId: {
+                    ...product,
+                    price: product?.variants?.[0]?.price || 0, // ✅ default price
+                    stock: product?.variants?.[0]?.stock || 0,
+                }
+            };
+        });
     }
 
     async remove(

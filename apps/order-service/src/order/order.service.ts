@@ -8,6 +8,10 @@ import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class OrderService {
+  private normalize(arr: string[]) {
+    return arr.slice().sort().join('-');
+  }
+
   constructor(
     @InjectModel(Order.name)
     private orderModel: Model<OrderDocument>,
@@ -24,8 +28,8 @@ export class OrderService {
       city?: string;
       state?: string;
       pincode?: string;
-      lat?:number;
-      lng?:number;
+      lat?: number;
+      lng?: number;
     },
     saveAddress: boolean
   }) {
@@ -40,9 +44,9 @@ export class OrderService {
         }),
       );
 
-      const cartList = cartRes.data;
+      const cart = cartRes.data;
 
-      const cart = Array.isArray(cartList) ? cartList[0] : cartList;
+      // const cart = Array.isArray(cartList) ? cartList[0] : cartList;
 
       const cartItems = cart?.items || [];
 
@@ -55,16 +59,24 @@ export class OrderService {
         0,
       );
 
-      const updatedProducts: { id: string; qty: number }[] = [];
+      const updatedProducts: { id: string; qty: number; variant: string[] }[] = [];
 
       try {
         // ✅ Step 1: Validate stock
+
         for (const item of cartItems) {
+          if (!item.productId || !item.productId.variants) {
+            throw new BadRequestException('Invalid product data');
+          }
           const product = item.productId;
 
-          if (!product || product.stock < item.quantity) {
+          const selectedVariant = product.variants.find(v =>
+            this.normalize(v.values) === this.normalize(item.variant ||[])
+          );
+
+          if (!selectedVariant || selectedVariant.stock < item.quantity) {
             throw new BadRequestException(
-              `Product ${product?.title || ''} is out of stock`,
+              `Product ${product?.title || ''} is out of stock`
             );
           }
         }
@@ -79,7 +91,10 @@ export class OrderService {
           await firstValueFrom(
             this.httpService.patch(
               `http://localhost:3002/products/${productId}/reduce-stock`,
-              { quantity: item.quantity },
+              {
+                quantity: item.quantity,
+                variant: item.variant
+              },
               {
                 headers: {
                   Authorization: token.startsWith('Bearer ')
@@ -93,6 +108,7 @@ export class OrderService {
           updatedProducts.push({
             id: productId,
             qty: item.quantity,
+            variant: item.variant,
           });
         }
 
@@ -102,7 +118,10 @@ export class OrderService {
           await firstValueFrom(
             this.httpService.patch(
               `http://localhost:3002/products/${p.id}/restore-stock`,
-              { quantity: p.qty },
+              {
+                quantity: p.qty,
+                variant: p.variant
+              },
               {
                 headers: {
                   Authorization: token.startsWith('Bearer ')
@@ -126,6 +145,8 @@ export class OrderService {
               ? item.productId._id
               : item.productId,
           sellerId: item.sellerId,
+          variant: item.variant || [],
+          title: item.productId?.title || 'Unknown Product',
           quantity: item.quantity,
           price: item.price,
         })),
@@ -143,19 +164,14 @@ export class OrderService {
           {
             $addToSet: {
               address: {
-                // name: checkoutData.receiverName,
-                // phone: checkoutData.receiverPhone,
                 addressLine: checkoutData.receiverAddress.addressLine,
                 city: checkoutData.receiverAddress.city,
                 state: checkoutData.receiverAddress.state,
                 pincode: checkoutData.receiverAddress.pincode,
-                lat:checkoutData.receiverAddress.lat,
-                lng:checkoutData.receiverAddress.lng,
+                lat: checkoutData.receiverAddress.lat,
+                lng: checkoutData.receiverAddress.lng,
               },
             },
-            // $addToSet: {
-            //   address: checkoutData.receiverAddress,
-            // },
           },
         );
       }
@@ -199,7 +215,7 @@ export class OrderService {
       return this.orderModel
         .find()
         .populate('userId', 'name email phone address')
-        .populate('items.productId', 'title price stock')
+        .populate('items.productId', 'title variants')
         .sort({ createdAt: -1 })
         .lean();
     }
@@ -210,7 +226,7 @@ export class OrderService {
       return this.orderModel
         .find({ 'items.sellerId': user.sub })   // ✅ filter by sellerId
         .populate('userId', 'name email phone address')
-        .populate('items.productId', 'title price stock')
+        .populate('items.productId', 'title variants')
         .sort({ createdAt: -1 })
         .lean();
     }
@@ -222,7 +238,7 @@ export class OrderService {
     return this.orderModel
       .findById(id)
       .populate('userId', 'name email phone address')
-      .populate('items.productId', 'title price stock')
+      .populate('items.productId', 'title variants')
       .lean();
   }
 
@@ -251,7 +267,10 @@ export class OrderService {
         await firstValueFrom(
           this.httpService.patch(
             `http://localhost:3002/products/${productId}/restore-stock`,
-            { quantity: item.quantity },
+            {
+              quantity: item.quantity,
+              variant: item.variant
+            },
             {
               headers: {
                 Authorization: `Bearer ${token}`,

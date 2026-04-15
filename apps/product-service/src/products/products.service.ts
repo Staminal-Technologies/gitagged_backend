@@ -81,6 +81,7 @@ export class ProductsService {
         else {
             data.variants = data.variants.map((v, index) => ({
                 ...v,
+                values: v.values.sort(),
                 sku: v.sku || `${data.title.substring(0, 3).toUpperCase()}-${index + 1}`
             }));
         }
@@ -93,23 +94,6 @@ export class ProductsService {
 
         return product;
     }
-    // async create(data: any, user: any) {
-
-    //     if (user.role === 'SELLER') {
-    //         const product = await this.productModel.create({
-    //             ...data,
-    //             sellerId: user.sub,
-    //             approveStatus: ProductApproveStatus.PENDING,
-    //         });
-
-    //         // Send email to admin for approval
-    //         await this.mailService.sendProductRequestEmail(product);
-
-    //         return product;
-
-    //     }
-    //     throw new UnauthorizedException();
-    // }
 
     async update(id: string, data: any, user: any) {
 
@@ -213,57 +197,53 @@ export class ProductsService {
     }
 
     async reduceStock(productId: string, variantValues: string[], qty: number) {
-        const product = await this.productModel.findById(productId);
-
-        if (!product) throw new NotFoundException('Product not found');
-
-        const variant = product.variants.find(v =>
-            JSON.stringify(v.values) === JSON.stringify(variantValues)
+        variantValues = variantValues.sort();
+        const product = await this.productModel.findOneAndUpdate(
+            {
+                _id: productId,
+                variants: {
+                    $elemMatch: {
+                        values: variantValues,
+                        stock: { $gte: qty } // ✅ CHECK + UPDATE together
+                    }
+                }
+            },
+            {
+                $inc: {
+                    "variants.$.stock": -qty
+                }
+            },
+            { new: true }
         );
 
-        if (!variant) throw new BadRequestException('Variant not found');
-
-        if (variant.stock < qty) {
-            throw new BadRequestException('Insufficient stock');
+        if (!product) {
+            throw new BadRequestException('Insufficient stock or variant not found');
         }
 
-        variant.stock -= qty;
-
-        await product.save();
-
         return product;
     }
-    // async reduceStock(productId: string, qty: number) {
-    //     const product = await this.productModel.findById(productId);
-    //     if (!product) throw new NotFoundException('Product not found');
-    //     if (product.stock < qty) throw new BadRequestException('Insufficient stock');
-
-    //     product.stock -= qty;
-    //     return product.save();
-    // }
 
     async restoreStock(productId: string, variantValues: string[], qty: number) {
-        const product = await this.productModel.findById(productId);
-
-        const variant = product.variants.find(v =>
-            JSON.stringify(v.values) === JSON.stringify(variantValues)
+        variantValues = variantValues.sort();
+        const product = await this.productModel.findOneAndUpdate(
+            {
+                _id: productId,
+                "variants.values": variantValues
+            },
+            {
+                $inc: {
+                    "variants.$.stock": qty
+                }
+            },
+            { new: true }
         );
 
-        if (!variant) throw new BadRequestException('Variant not found');
-
-        variant.stock += qty;
-
-        await product.save();
+        if (!product) {
+            throw new BadRequestException('Variant not found');
+        }
 
         return product;
     }
-    // async restoreStock(productId: string, qty: number) {
-    //     return this.productModel.findByIdAndUpdate(
-    //         productId,
-    //         { $inc: { stock: qty } },
-    //         { new: true },
-    //     );
-    // }
 
     async getSellerProducts(sellerId: string) {
         return this.productModel.find({ sellerId }).populate('categories').populate('giRegions');

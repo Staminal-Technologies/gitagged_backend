@@ -58,7 +58,11 @@ export class UsersService {
     guestCart: { productId: string; qty: number; }[],
     guestFavourites: string[],
   ) {
-    await this.cartService.mergeGuestCart(userId, guestCart);
+    await this.cartService.mergeGuestCart(userId, guestCart.map(item => ({
+      productId: item.productId,
+      qty: item.qty,
+      variant:[]
+    })));
     await this.favoritesService.mergeGuestFavorites(userId, guestFavourites);
 
     return {

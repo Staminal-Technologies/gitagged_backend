@@ -12,6 +12,7 @@ export class Cart {
     {
       productId: { type: Types.ObjectId, ref: 'Product', required: true },
       sellerId: { type: Types.ObjectId, ref: 'Seller', required: true }, // ✅ important
+      variant:{ type: [String], default: []},
       quantity: { type: Number, required: true, min: 1 },
       price: { type: Number, required: true }, // snapshot price
     }
@@ -19,6 +20,7 @@ export class Cart {
   items: {
     productId: Types.ObjectId;
     sellerId: Types.ObjectId;
+    variant: string[];
     quantity: number;
     price: number;
   }[];

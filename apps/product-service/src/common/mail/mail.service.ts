@@ -139,4 +139,32 @@ export class MailService {
     `,
     });
   }
+
+  async sendEmail(to: string, subject: string, text: string) {
+    await this.transporter.sendMail({
+      from: `"Gitagged" <${process.env.EMAIL_USER}>`,
+      to,
+      subject,
+      html: `
+      <div style="font-family: Arial; background:#f4f6f8; padding:20px;">
+        <div style="max-width:600px;margin:auto;background:#fff;border-radius:10px;padding:20px;">
+          
+          <h2 style="color:#000;">${subject}</h2>
+
+          <p style="font-size:16px; color:#333;">
+            ${text}
+          </p>
+
+          <br/>
+
+          <a href="http://localhost:3000"
+             style="background:black;color:white;padding:10px 20px;text-decoration:none;border-radius:6px;">
+             View Product
+          </a>
+
+        </div>
+      </div>
+    `,
+    });
+  }
 }

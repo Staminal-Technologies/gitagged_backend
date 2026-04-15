@@ -8,6 +8,7 @@ import {
     Param,
     Delete,
     Put,
+    Query,
 } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { UserJwtGuard } from '../common/guards/user-jwt.guard';
@@ -20,11 +21,12 @@ export class CartController {
     @Post('add')
     addToCart(
         @Req() req,
-        @Body() body: { productId: string; quantity: number; },
+        @Body() body: { productId: string; quantity: number; variant: string[] },
     ) {
         return this.cartService.addToCart(
             req.user.sub,
             body.productId,
+            body.variant || [],
             body.quantity,
         );
     }
@@ -45,18 +47,22 @@ export class CartController {
         @Req() req,
         @Param('productId') productId: string,
         @Body('quantity') quantity: number,
+        @Body('variant') variantValues: string[],
     ) {
-        return this.cartService.updateQuantity(req.user.sub, productId, quantity);
+        return this.cartService.updateQuantity(req.user.sub, productId, variantValues, quantity);
     }
 
     @Delete(':productId')
     remove(
         @Req() req,
         @Param('productId') productId: string,
+        @Query('variant') variant: string,
     ) {
+        const variantValues = variant?.split(',') || [];
         return this.cartService.removeItem(
             req.user.sub,
             productId,
+            variantValues
         );
     }
 
