@@ -10,10 +10,14 @@ export class FavoritesService {
         private favoriteModel: Model<FavoriteDocument>,
     ) { }
 
-    async add(userId: string, productId: string) {
+    async add(userId: string, productId: string, variants: string[] = []) {
+        const normalize = (arr: string[]) => arr.slice().sort();
+        const normalizeVariants = normalize(variants);
+
         const exists = await this.favoriteModel.findOne({
-            userId,
-            productId,
+            userId: new Types.ObjectId(userId),
+            productId: new Types.ObjectId(productId),
+            variants: { $all: normalizeVariants, $size: normalizeVariants.length }
         });
 
         if (exists) return exists;
@@ -21,6 +25,7 @@ export class FavoritesService {
         return this.favoriteModel.create({
             userId: new Types.ObjectId(userId),
             productId: new Types.ObjectId(productId),
+            variants: normalizeVariants,
         });
     }
 
@@ -33,37 +38,79 @@ export class FavoritesService {
             })
             .lean();
 
-        return data.map(fav => {
-            const product: any = fav.productId;
+        return data.filter(fav => {
+            const product = fav.productId as any;
+            if (!product) return false;
+
+            const normalize = (arr: string[]) => arr.slice().sort().join('-');
+
+            const v = product?.variants?.find(v =>
+                normalize(v.values) === normalize(fav.variants || [])
+            ) || product?.variants?.[0];
+
+            if (!v) return false;
+
+            // 🔥 ADD THIS
+            if (v.expiryDate && new Date(v.expiryDate) < new Date()) {
+                return false;
+            }
+
+            return true;
+        }).map(fav => {
+            const product = fav.productId as any;
+            if (!product) return null;
+
+            const normalize = (arr: string[]) => arr.slice().sort().join('-');
+
+            const v = product?.variants?.find(v =>
+                normalize(v.values) === normalize(fav.variants || [])
+            ) || product?.variants?.[0];
+            if (!v) return null;
+
+            const originalPrice = v?.price || 0;
+            const discount = v?.discountPercentage || 0;
+
+            const finalPrice =
+                originalPrice - (originalPrice * discount) / 100;
 
             return {
-                ...fav,
-                productId: {
-                    ...product,
-                    price: product?.variants?.[0]?.price || 0, // ✅ default price
-                    stock: product?.variants?.[0]?.stock || 0,
-                }
+                id: product?._id,
+                title: product?.title,
+                image: product?.images?.[0] || '',
+                price: finalPrice,
+                originalPrice,
+                discount,
+                stock: v?.stock || 0,
+                inStock: (v?.stock || 0) > 0,
+                categories: product?.categories,
+                giRegions: product?.giRegions,
+                variant: fav.variants || [],
             };
-        });
+        }).filter(Boolean);
     }
 
     async remove(
         userId: string,
         productId: string,
+        variants: string[] = []
     ): Promise<{ deletedCount?: number }> {
+        const normalize = (arr: string[]) => arr.slice().sort();
+        const normalizedVariants = normalize(variants);
+
         return this.favoriteModel.deleteOne({
             userId: new Types.ObjectId(userId),
             productId: new Types.ObjectId(productId),
+            variants: { $all: normalizedVariants, $size: normalizedVariants.length }
         });
     }
 
     async mergeGuestFavorites(
         userId: string,
-        guestFavourites: string[],
+        guestFavourites: { productId: string, variants: string[] }[],
     ) {
         const uId = new Types.ObjectId(userId);
 
-        for (const productId of guestFavourites) {
+        for (const { productId, variants } of guestFavourites) {
             // Validate productId before converting
             if (!Types.ObjectId.isValid(productId)) {
                 console.log(`Skipping invalid productId: ${productId}`);
@@ -71,15 +118,20 @@ export class FavoritesService {
             }
             const pId = new Types.ObjectId(productId);
 
+            const normalize = (arr: string[]) => arr.slice().sort();
+            const normalizedVariants = normalize(variants);
+
             const exists = await this.favoriteModel.findOne({
                 userId: uId,
                 productId: pId,
+                variants: { $all: normalizedVariants, $size: normalizedVariants.length }
             });
 
             if (!exists) {
                 await this.favoriteModel.create({
                     userId: uId,
                     productId: pId,
+                    variants: normalizedVariants,
                 });
             }
         }

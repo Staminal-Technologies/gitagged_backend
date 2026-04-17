@@ -17,6 +17,8 @@ export class Order {
       title: String,
       quantity: Number,
       price: Number,
+      originalPrice: Number,
+      discount: Number,
     },
   ])
   items: {
@@ -25,6 +27,8 @@ export class Order {
     variant: string[];
     quantity: number;
     price: number;
+    originalPrice: number;
+    discount: number;
   }[];
 
   @Prop({ required: true })

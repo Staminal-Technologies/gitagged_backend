@@ -47,11 +47,24 @@ export class CartService {
             throw new BadRequestException('Variant not found');
         }
 
+        // 🔥 EXPIRY CHECK
+        if (selectedVariant.expiryDate && new Date(selectedVariant.expiryDate) < new Date()) {
+            throw new BadRequestException('Product is expired');
+        }
+
         if (selectedVariant.stock <= 0) {
             throw new BadRequestException('Product is out of stock');
         }
 
         let cart = await this.cartModel.findOne({ userId: uId });
+
+        const discount = selectedVariant.discountPercentage || 0;
+
+        const finalPrice =
+            selectedVariant.price -
+            (selectedVariant.price * discount) / 100;
+
+        variantValues = variantValues.slice().sort();
 
         // 🆕 Create cart
         if (!cart) {
@@ -69,7 +82,9 @@ export class CartService {
                         sellerId: product.sellerId,
                         variant: variantValues,
                         quantity,
-                        price: selectedVariant.price,
+                        price: finalPrice,
+                        originalPrice: selectedVariant.price,
+                        discount: discount,
                     },
                 ],
             });
@@ -101,7 +116,9 @@ export class CartService {
                 sellerId: product.sellerId,
                 variant: variantValues,
                 quantity,
-                price: selectedVariant.price,
+                price: finalPrice,
+                originalPrice: selectedVariant.price,
+                discount: discount,
             });
         }
 
@@ -111,10 +128,39 @@ export class CartService {
     // Get user cart
     async getUserCart(userId: string) {
         const uId = new Types.ObjectId(userId);
+
         return this.cartModel
             .findOne({ userId: uId })
             .populate('items.productId')
-            .lean();
+            .lean()
+            .then(cart => {
+                if (!cart) return { items: [] };
+                return {
+                    items: cart.items
+                        .filter((item: any) => {
+                            const product = item.productId;
+
+                            const variant = product?.variants?.find((v: any) =>
+                                this.normalize(v.values) === this.normalize(item.variant || [])
+                            );
+
+                            if (!variant) return false;
+
+                            if (
+                                variant.expiryDate &&
+                                new Date(variant.expiryDate) < new Date()
+                            ) {
+                                return false;
+                            }
+
+                            return true;
+                        })
+                        .map((item: any) => ({
+                            ...item,
+                            productId: item.productId
+                        }))
+                };
+            });
     }
 
     // Update quantity
@@ -134,7 +180,7 @@ export class CartService {
         if (!cart) throw new NotFoundException('Cart not found');
 
         const item = cart.items.find(
-            (i) => i.productId.toString() === pId.toString() && this.normalize(i.variant)=== this.normalize(variantValues)
+            (i) => i.productId.toString() === pId.toString() && this.normalize(i.variant) === this.normalize(variantValues)
         );
 
         if (!item) throw new NotFoundException('Item not found');
@@ -143,12 +189,18 @@ export class CartService {
 
         if (!product) throw new NotFoundException('Product not found');
 
+        variantValues = variantValues.slice().sort();
+
         const selectedVariant = product.variants.find(v =>
             this.normalize(v.values) === this.normalize(variantValues)
         );
 
         if (!selectedVariant) {
             throw new BadRequestException('Variant not found');
+        }
+
+        if (selectedVariant.expiryDate && new Date(selectedVariant.expiryDate) < new Date()) {
+            throw new BadRequestException('Product is expired');
         }
 
         if (quantity > selectedVariant.stock) {

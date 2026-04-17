@@ -17,8 +17,8 @@ export class Product {
 
   @Prop([
     {
-      name: String, 
-      options: [String], 
+      name: String,
+      options: [String],
     },
   ])
   variantOptions: {
@@ -31,16 +31,20 @@ export class Product {
       values: [String],
       price: Number,
       mrp: Number,
+      discountPercentage: Number,
       stock: Number,
       sku: String,
+      expiryDate: { type: Date, required: false },
     },
   ])
   variants: {
     values: string[];
     price: number;
     mrp?: number;
+    discountPercentage?: number;
     stock: number;
     sku?: string;
+    expiryDate?: Date;
   }[];
 
   @Prop({ type: [String], default: [] })
@@ -59,8 +63,11 @@ export class Product {
   @Prop({ type: [MongooseSchema.Types.ObjectId], ref: 'GIRegion', default: [] })
   giRegions: Types.ObjectId[];
 
+  @Prop({ default: false })
+  isReturnAllowed: boolean;
+
   @Prop({ default: 0 })
-  discountPercentage?: number;
+  returnValidityDays: number;
 
   @Prop({ default: 'inactive' })
   status: string;

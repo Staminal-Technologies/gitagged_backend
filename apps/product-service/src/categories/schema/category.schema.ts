@@ -18,8 +18,11 @@ export class Category {
     @Prop({ default: null })
     parentId: string | null;
 
-    // @Prop({ type: [String], default: [] })
-    // children: string[];
+    @Prop({ default: false })
+    requiresExpiry: boolean;
+
+    @Prop({ default: false })
+    requiresReturnPolicy: boolean;
 }
 
 export const CategorySchema = SchemaFactory.createForClass(Category);

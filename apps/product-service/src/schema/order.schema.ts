@@ -13,10 +13,12 @@ export class Order {
     {
       productId: { type: Types.ObjectId, ref: 'Product' },
       sellerId: { type: Types.ObjectId, ref: 'Seller' },
-      variant:{type: [String], default:[]},
+      variant: { type: [String], default: [] },
       title: String,
       quantity: Number,
       price: Number,
+      originalPrice: Number,
+      discount: Number,
     },
   ])
   items: {
@@ -25,6 +27,8 @@ export class Order {
     variant: string[];
     quantity: number;
     price: number;
+    originalPrice: number;
+    discount: number;
   }[];
 
   @Prop({ required: true })

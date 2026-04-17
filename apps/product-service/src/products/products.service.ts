@@ -17,9 +17,27 @@ export class ProductsService {
     ) { }
 
     async findAll(user: any) {
-
+        const now = new Date();
         if (!user || user.role === 'USER') {
-            return this.productModel.find({ status: 'active', approveStatus: ProductApproveStatus.APPROVED, })
+            return this.productModel.find({
+                status: 'active', approveStatus: ProductApproveStatus.APPROVED,
+                $or: [
+                    {
+                        variants: {
+                            $elemMatch: {
+                                expiryDate: { $exists: false }
+                            }
+                        }
+                    },
+                    {
+                        variants: {
+                            $elemMatch: {
+                                expiryDate: { $gte: now }
+                            }
+                        }
+                    }
+                ]
+            })
                 .populate('categories', 'name')
                 .populate('giRegions', 'name')
                 .lean();
@@ -63,6 +81,12 @@ export class ProductsService {
             throw new UnauthorizedException();
         }
 
+        const categories = await this.categoryModel.find({
+            _id: { $in: data.categories }
+        });
+        const requiresExpiry = categories.some(c => c.requiresExpiry);
+        const requiresReturn = categories.some(c => c.requiresReturnPolicy);
+
         // 🔥 CASE 1: NO VARIANTS (simple product)
         if (!data.variants || data.variants.length === 0) {
             data.variantOptions = [];
@@ -72,6 +96,7 @@ export class ProductsService {
                     values: ['default'],
                     price: data.price || 0,
                     stock: data.stock || 0,
+                    discountPercentage: data.discountPercentage || 0,
                     sku: 'DEFAULT'
                 }
             ];
@@ -82,8 +107,28 @@ export class ProductsService {
             data.variants = data.variants.map((v, index) => ({
                 ...v,
                 values: v.values.sort(),
+                discountPercentage: v.discountPercentage || 0,
                 sku: v.sku || `${data.title.substring(0, 3).toUpperCase()}-${index + 1}`
             }));
+        }
+
+        // 🔥 EXPIRY VALIDATION
+        if (requiresExpiry) {
+            const hasExpiry = data.variants?.every(v => v.expiryDate);
+
+            if (!hasExpiry) {
+                throw new BadRequestException('Expiry date is required for selected category');
+            }
+        }
+
+        // 🔥 RETURN VALIDATION
+        if (requiresReturn) {
+            data.isReturnAllowed = true;
+        }
+        if (requiresReturn) {
+            if (!data.returnValidityDays || data.returnValidityDays <= 0) {
+                throw new BadRequestException('Return validity is required for selected category');
+            }
         }
 
         const product = await this.productModel.create({

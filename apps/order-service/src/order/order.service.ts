@@ -71,8 +71,15 @@ export class OrderService {
           const product = item.productId;
 
           const selectedVariant = product.variants.find(v =>
-            this.normalize(v.values) === this.normalize(item.variant ||[])
+            this.normalize(v.values) === this.normalize(item.variant || [])
           );
+
+          if (!selectedVariant) {
+            throw new BadRequestException('Variant not found');
+          }
+          if (selectedVariant.expiryDate && new Date(selectedVariant.expiryDate) < new Date()) {
+            throw new BadRequestException(`Product ${product.title} is expired`);
+          }
 
           if (!selectedVariant || selectedVariant.stock < item.quantity) {
             throw new BadRequestException(
@@ -149,6 +156,8 @@ export class OrderService {
           title: item.productId?.title || 'Unknown Product',
           quantity: item.quantity,
           price: item.price,
+          originalPrice: item.originalPrice || item.price,
+          discount: item.discount || 0,
         })),
         totalAmount,
         status: OrderStatus.PLACED,

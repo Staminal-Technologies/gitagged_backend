@@ -54,7 +54,7 @@ export class UsersController {
   @UseGuards(UserJwtGuard)
   async mergeGuestData(
     @Req() req,
-    @Body() body: { cart: any[]; favourites: string[] }
+    @Body() body: { cart: any[]; favourites: { productId: string; variants: string[] }[] }
   ) {
     console.log("MERGE USER 👉", req.user);
     const userId = req.user.sub; // from JWT

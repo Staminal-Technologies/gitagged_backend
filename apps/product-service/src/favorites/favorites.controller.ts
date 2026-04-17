@@ -6,6 +6,7 @@ import {
   Param,
   Req,
   UseGuards,
+  Body,
 } from '@nestjs/common';
 import { FavoritesService } from './favorites.service';
 import { UserJwtGuard } from '../common/guards/user-jwt.guard';
@@ -16,8 +17,8 @@ export class FavoritesController {
   constructor(private readonly service: FavoritesService) { }
 
   @Post(':productId')
-  add(@Req() req, @Param('productId') productId: string) {
-    return this.service.add(req.user.sub, productId);
+  add(@Req() req, @Param('productId') productId: string, @Body('variants') variants: string[]) {
+    return this.service.add(req.user.sub, productId, variants);
   }
 
   @Get()
@@ -26,8 +27,8 @@ export class FavoritesController {
   }
 
   @Delete(':productId')
-  remove(@Req() req, @Param('productId') productId: string) {
-    return this.service.remove(req.user.sub, productId);
+  remove(@Req() req, @Param('productId') productId: string, @Body('variants') variants: string[]) {
+    return this.service.remove(req.user.sub, productId, variants);
   }
 
 }

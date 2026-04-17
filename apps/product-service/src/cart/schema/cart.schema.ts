@@ -11,10 +11,12 @@ export class Cart {
   @Prop([
     {
       productId: { type: Types.ObjectId, ref: 'Product', required: true },
-      sellerId: { type: Types.ObjectId, ref: 'Seller', required: true }, // ✅ important
-      variant:{ type: [String], default: []},
+      sellerId: { type: Types.ObjectId, ref: 'Seller', required: true },
+      variant: { type: [String], default: [] },
       quantity: { type: Number, required: true, min: 1 },
-      price: { type: Number, required: true }, // snapshot price
+      price: { type: Number, required: true },
+      originalPrice: { type: Number, required: true },
+      discount: { type: Number, required: true },
     }
   ])
   items: {
@@ -23,6 +25,8 @@ export class Cart {
     variant: string[];
     quantity: number;
     price: number;
+    originalPrice: number;
+    discount: number;
   }[];
 
 }
