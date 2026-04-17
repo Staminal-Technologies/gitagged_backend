@@ -63,7 +63,7 @@ export class Product {
   @Prop({ type: [MongooseSchema.Types.ObjectId], ref: 'GIRegion', default: [] })
   giRegions: Types.ObjectId[];
 
-  @Prop({ default: false })
+  @Prop({ required: true })
   isReturnAllowed: boolean;
 
   @Prop({ default: 0 })

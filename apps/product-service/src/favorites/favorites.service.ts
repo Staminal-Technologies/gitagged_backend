@@ -38,55 +38,57 @@ export class FavoritesService {
             })
             .lean();
 
-        return data.filter(fav => {
-            const product = fav.productId as any;
-            if (!product) return false;
+        return {
+            items: data.filter(fav => {
+                const product = fav.productId as any;
+                if (!product) return false;
 
-            const normalize = (arr: string[]) => arr.slice().sort().join('-');
+                const normalize = (arr: string[]) => arr.slice().sort().join('-');
 
-            const v = product?.variants?.find(v =>
-                normalize(v.values) === normalize(fav.variants || [])
-            ) || product?.variants?.[0];
+                const v = product?.variants?.find(v =>
+                    normalize(v.values) === normalize(fav.variants || [])
+                ) || product?.variants?.[0];
 
-            if (!v) return false;
+                if (!v) return false;
 
-            // 🔥 ADD THIS
-            if (v.expiryDate && new Date(v.expiryDate) < new Date()) {
-                return false;
-            }
+                // 🔥 ADD THIS
+                if (v.expiryDate && new Date(v.expiryDate) < new Date()) {
+                    return false;
+                }
 
-            return true;
-        }).map(fav => {
-            const product = fav.productId as any;
-            if (!product) return null;
+                return true;
+            }).map(fav => {
+                const product = fav.productId as any;
+                if (!product) return null;
 
-            const normalize = (arr: string[]) => arr.slice().sort().join('-');
+                const normalize = (arr: string[]) => arr.slice().sort().join('-');
 
-            const v = product?.variants?.find(v =>
-                normalize(v.values) === normalize(fav.variants || [])
-            ) || product?.variants?.[0];
-            if (!v) return null;
+                const v = product?.variants?.find(v =>
+                    normalize(v.values) === normalize(fav.variants || [])
+                ) || product?.variants?.[0];
+                if (!v) return null;
 
-            const originalPrice = v?.price || 0;
-            const discount = v?.discountPercentage || 0;
+                const originalPrice = v?.price || 0;
+                const discount = v?.discountPercentage || 0;
 
-            const finalPrice =
-                originalPrice - (originalPrice * discount) / 100;
+                const finalPrice =
+                    originalPrice - (originalPrice * discount) / 100;
 
-            return {
-                id: product?._id,
-                title: product?.title,
-                image: product?.images?.[0] || '',
-                price: finalPrice,
-                originalPrice,
-                discount,
-                stock: v?.stock || 0,
-                inStock: (v?.stock || 0) > 0,
-                categories: product?.categories,
-                giRegions: product?.giRegions,
-                variant: fav.variants || [],
-            };
-        }).filter(Boolean);
+                return {
+                    id: product?._id,
+                    title: product?.title,
+                    image: product?.images?.[0] || '',
+                    price: finalPrice,
+                    originalPrice,
+                    discount,
+                    stock: v?.stock || 0,
+                    inStock: (v?.stock || 0) > 0,
+                    categories: product?.categories,
+                    giRegions: product?.giRegions,
+                    variant: fav.variants || [],
+                };
+            }).filter(Boolean)
+        };
     }
 
     async remove(
