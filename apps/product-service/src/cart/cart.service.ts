@@ -146,10 +146,7 @@ export class CartService {
 
                             if (!variant) return false;
 
-                            if (
-                                variant.expiryDate &&
-                                new Date(variant.expiryDate) < new Date()
-                            ) {
+                            if (variant.expiryDate && new Date(variant.expiryDate) < new Date()) {
                                 return false;
                             }
 

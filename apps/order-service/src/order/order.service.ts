@@ -77,13 +77,18 @@ export class OrderService {
           if (!selectedVariant) {
             throw new BadRequestException('Variant not found');
           }
-          if (selectedVariant.expiryDate && new Date(selectedVariant.expiryDate) < new Date()) {
-            throw new BadRequestException(`Product ${product.title} is expired`);
+
+          const now = new Date();
+          const bufferDate = new Date();
+          bufferDate.setDate(now.getDate() + 10);
+
+          if (selectedVariant.expiryDate && new Date(selectedVariant.expiryDate) < bufferDate) {
+            throw new BadRequestException(`Product ${product.title} is near expiry`);
           }
 
           if (!selectedVariant || selectedVariant.stock < item.quantity) {
             throw new BadRequestException(
-              `Product ${product?.title || ''} is out of stock`
+              `Only ${selectedVariant.stock} items available!!`
             );
           }
         }
@@ -146,19 +151,35 @@ export class OrderService {
       // order creation..
       const order = await this.orderModel.create({
         userId,
-        items: cartItems.map(item => ({
-          productId:
-            typeof item.productId === 'object'
-              ? item.productId._id
-              : item.productId,
-          sellerId: item.sellerId,
-          variant: item.variant || [],
-          title: item.productId?.title || 'Unknown Product',
-          quantity: item.quantity,
-          price: item.price,
-          originalPrice: item.originalPrice || item.price,
-          discount: item.discount || 0,
-        })),
+        items: cartItems.map(item => {
+          const product = item.productId;
+
+          return {
+            productId: product._id,
+            sellerId: item.sellerId,
+            variant: item.variant || [],
+            title: product?.title || 'Unknown Product',
+            quantity: item.quantity,
+            price: item.price,
+            originalPrice: item.originalPrice || item.price,
+            discount: item.discount || 0,
+
+            // 🔥 ADD THIS
+            isReturnAllowed: product.isReturnAllowed || false,
+            returnValidityDays: product.returnValidityDays || 0,
+          }
+          // productId:
+          //   typeof item.productId === 'object'
+          //     ? item.productId._id
+          //     : item.productId,
+          // sellerId: item.sellerId,
+          // variant: item.variant || [],
+          // title: item.productId?.title || 'Unknown Product',
+          // quantity: item.quantity,
+          // price: item.price,
+          // originalPrice: item.originalPrice || item.price,
+          // discount: item.discount || 0,
+        }),
         totalAmount,
         status: OrderStatus.PLACED,
         receiverName: checkoutData.receiverName,
@@ -294,6 +315,160 @@ export class OrderService {
     await order.save();
 
     return order;
+  }
+
+  //return service
+  async returnOrder(orderId: string, userId: string, token: String) {
+    const order = await this.orderModel.findById(orderId);
+
+    if (!order) throw new BadRequestException('Order not found');
+
+    if (order.userId.toString() !== userId) {
+      throw new BadRequestException('Not your order');
+    }
+    if (order.status !== OrderStatus.DELIVERED) {
+      throw new BadRequestException('Return allowed only after delivery');
+    }
+
+    for (const item of order.items) {
+
+      if (!item.isReturnAllowed) {
+        throw new BadRequestException('Return not allowed');
+      }
+
+      if ([OrderStatus.RETURNED, OrderStatus.REPLACED].includes(order.status)) {
+        throw new BadRequestException('Already processed');
+      }
+
+      const orderDate = new Date(order.createdAt);
+      const today = new Date();
+
+      const diffDays = Math.floor(
+        (today.getTime() - orderDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      if (diffDays > item.returnValidityDays) {
+        throw new BadRequestException('Return window expired');
+      }
+    }
+
+    // 🔥 RESTORE STOCK (+1)
+    for (const item of order.items) {
+      await firstValueFrom(
+        this.httpService.patch(
+          `http://localhost:3002/products/${item.productId}/restore-stock`,
+          {
+            quantity: item.quantity,
+            variant: item.variant
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            }
+          }
+        )
+      );
+    }
+
+    order.status = OrderStatus.RETURNED;
+    await order.save();
+
+    return { message: 'Order returned successfully' };
+  }
+
+  async replaceOrder(orderId: string, userId: string, token: String) {
+    const order = await this.orderModel.findById(orderId);
+
+    if (!order) throw new BadRequestException('Order not found');
+
+    if ([OrderStatus.RETURNED, OrderStatus.REPLACED].includes(order.status)) {
+      throw new BadRequestException('Already processed');
+    }
+
+    if (order.userId.toString() !== userId) {
+      throw new BadRequestException('Not your order');
+    }
+
+    if (order.status !== OrderStatus.DELIVERED) {
+      throw new BadRequestException('Return allowed only after delivery');
+    }
+
+    // 🔥 VALIDITY CHECK (same as return)
+    for (const item of order.items) {
+
+      if (!item.isReturnAllowed) {
+        throw new BadRequestException('Replacement not allowed');
+      }
+
+      const orderDate = new Date(order.createdAt);
+      const today = new Date();
+
+      const diffDays = Math.floor(
+        (today.getTime() - orderDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      if (diffDays > item.returnValidityDays) {
+        throw new BadRequestException('Replacement window expired');
+      }
+    }
+
+    // 🔥 STEP 1: RESTORE OLD PRODUCT (+1)
+    for (const item of order.items) {
+      await firstValueFrom(
+        this.httpService.patch(
+          `http://localhost:3002/products/${item.productId}/restore-stock`,
+          {
+            quantity: item.quantity,
+            variant: item.variant
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            }
+          }
+        )
+      );
+    }
+
+    // 🔥 CHECK STOCK BEFORE REDUCE
+    for (const item of order.items) {
+      const productRes = await firstValueFrom(
+        this.httpService.get(`http://localhost:3002/products/${item.productId}`)
+      );
+
+      const product = productRes.data;
+
+      const variant = product.variants.find(v =>
+        this.normalize(v.values) === this.normalize(item.variant)
+      );
+
+      if (!variant || variant.stock < item.quantity) {
+        throw new BadRequestException('Replacement product out of stock');
+      }
+    }
+
+    // 🔥 STEP 2: REDUCE NEW PRODUCT (-1)
+    for (const item of order.items) {
+      await firstValueFrom(
+        this.httpService.patch(
+          `http://localhost:3002/products/${item.productId}/reduce-stock`,
+          {
+            quantity: item.quantity,
+            variant: item.variant
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            }
+          }
+        )
+      );
+    }
+
+    order.status = OrderStatus.REPLACED;
+    await order.save();
+
+    return { message: 'Replacement processed' };
   }
 
 }

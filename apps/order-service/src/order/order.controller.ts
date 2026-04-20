@@ -51,4 +51,17 @@ export class OrderController {
   getSellerOrders(@Req() req) {
     return this.orderService.getAllOrders(req.user);
   }
+
+  // return controllers!!
+  @Patch(':id/return')
+  @UseGuards(UserJwtGuard)
+  returnOrder(@Param('id') id: string, @Req() req) {
+    return this.orderService.returnOrder(id, req.user.sub, req.headers.authorization);
+  }
+
+  @Patch(':id/replace')
+  @UseGuards(UserJwtGuard)
+  replaceOrder(@Param('id') id: string, @Req() req) {
+    return this.orderService.replaceOrder(id, req.user.sub, req.headers.authorization);
+  }
 }

@@ -18,6 +18,9 @@ export class ProductsService {
 
     async findAll(user: any) {
         const now = new Date();
+        const futureDate= new Date();
+        futureDate.setDate(now.getDate()+10);
+
         if (!user || user.role === 'USER') {
             return this.productModel.find({
                 status: 'active', approveStatus: ProductApproveStatus.APPROVED,
@@ -32,7 +35,7 @@ export class ProductsService {
                     {
                         variants: {
                             $elemMatch: {
-                                expiryDate: { $gte: now }
+                                expiryDate: { $gte: futureDate }
                             }
                         }
                     }

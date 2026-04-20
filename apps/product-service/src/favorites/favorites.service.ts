@@ -51,8 +51,11 @@ export class FavoritesService {
 
                 if (!v) return false;
 
-                // 🔥 ADD THIS
-                if (v.expiryDate && new Date(v.expiryDate) < new Date()) {
+                const now = new Date();
+                const bufferDate = new Date();
+                bufferDate.setDate(now.getDate() + 10);
+
+                if (v.expiryDate && new Date(v.expiryDate) < bufferDate) {
                     return false;
                 }
 

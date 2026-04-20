@@ -2,7 +2,10 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Types, Document } from 'mongoose';
 import { OrderStatus } from '../enum/order-status.enum';
 
-export type OrderDocument = Order & Document;
+export type OrderDocument = Order & Document & {
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 @Schema({ timestamps: true })
 export class Order {
@@ -19,6 +22,8 @@ export class Order {
       price: Number,
       originalPrice: Number,
       discount: Number,
+      isReturnAllowed: { type: Boolean, default: false },
+      returnValidityDays: { type: Number, default: 0 },
     },
   ])
   items: {
@@ -29,6 +34,8 @@ export class Order {
     price: number;
     originalPrice: number;
     discount: number;
+    isReturnAllowed: boolean;
+    returnValidityDays: number;
   }[];
 
   @Prop({ required: true })
