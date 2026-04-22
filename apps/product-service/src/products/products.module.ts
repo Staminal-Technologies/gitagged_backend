@@ -7,16 +7,18 @@ import { Category, CategorySchema } from '../categories/schema/category.schema';
 import { SellerJwtStrategy } from '../strategy/seller-jwt.strategy';
 import { Seller, SellerSchema } from '../schema/seller.schema';
 import { PassportModule } from '@nestjs/passport';
-import { MailModule} from '../common/mail/mail.module';
+import { MailModule } from '../common/mail/mail.module';
+import { ProductBatch, ProductBatchSchema } from './schema/product-batch.schema';
 
 @Module({
     imports: [
         PassportModule,
-        MongooseModule.forFeature([ 
+        MongooseModule.forFeature([
             { name: Product.name, schema: ProductSchema },
-              { name: Category.name, schema: CategorySchema }, 
-              { name: Seller.name, schema: SellerSchema }
-        ]), 
+            { name: Category.name, schema: CategorySchema },
+            { name: Seller.name, schema: SellerSchema },
+            { name: ProductBatch.name, schema: ProductBatchSchema },
+        ]),
         MailModule,
     ],
     controllers: [ProductsController],

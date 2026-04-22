@@ -9,6 +9,7 @@ import { Order, OrderSchema } from './schema/order.schema';
 import { User, UserSchema } from '../common/schema/user.schema';
 import { Product, ProductSchema } from '../common/schema/product.schema';
 import { AuthModule } from '../common/auth/auth.module';
+import { ProductBatchSchema, ProductBatch } from 'apps/product-service/src/products/schema/product-batch.schema';
 
 @Module({
   imports: [
@@ -16,22 +17,13 @@ import { AuthModule } from '../common/auth/auth.module';
       { name: Order.name, schema: OrderSchema },
       { name: User.name, schema: UserSchema },
       {name: Product.name, schema: ProductSchema},
+      { name: ProductBatch.name, schema:ProductBatchSchema}
     ]),
-    // PassportModule.register({defaultStrategy:'user-jwt'}),
-    // JwtModule.registerAsync({
-    //   imports: [ConfigModule],
-    //   inject: [ConfigService],
-    //   useFactory: (config: ConfigService) => ({
-    //     secret: config.get('JWT_SECRET'),
-    //   }),
-    // }),
     AuthModule,
     HttpModule,
     AdminAuthModule,
   ],
   controllers: [OrderController, AdminOrdersController],
-  // providers: [OrderService, JwtStrategy],
   providers: [OrderService],
-  // exports:[PassportModule],
 })
 export class OrderModule { }

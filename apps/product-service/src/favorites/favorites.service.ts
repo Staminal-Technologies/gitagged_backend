@@ -2,17 +2,20 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Favorite, FavoriteDocument } from './schema/favorites.schema';
+import { ProductBatch, ProductBatchDocument } from '../products/schema/product-batch.schema';
 
 @Injectable()
 export class FavoritesService {
     constructor(
         @InjectModel(Favorite.name)
         private favoriteModel: Model<FavoriteDocument>,
+        @InjectModel(ProductBatch.name)
+        private productBatchModel: Model<ProductBatchDocument>,
     ) { }
 
     async add(userId: string, productId: string, variants: string[] = []) {
         const normalize = (arr: string[]) => arr.slice().sort();
-        const normalizeVariants = normalize(variants);
+        const normalizeVariants = normalize(variants.length ? variants : ['default']);
 
         const exists = await this.favoriteModel.findOne({
             userId: new Types.ObjectId(userId),
@@ -34,64 +37,126 @@ export class FavoritesService {
             .find({ userId: new Types.ObjectId(userId) })
             .populate({
                 path: 'productId',
-                select: 'title images categories giRegions variants',
+                select: 'title images categories giRegions variants status approveStatus',
             })
             .lean();
 
-        return {
-            items: data.filter(fav => {
-                const product = fav.productId as any;
-                if (!product) return false;
+        const now = new Date();
+        const bufferDate = new Date();
+        bufferDate.setDate(now.getDate() + 10);
 
-                const normalize = (arr: string[]) => arr.slice().sort().join('-');
+        const items = [];
 
-                const v = product?.variants?.find(v =>
-                    normalize(v.values) === normalize(fav.variants || [])
-                ) || product?.variants?.[0];
+        const normalizeKey = (arr: string[]) => arr.slice().sort().join('-');
+        const validData = data.filter(fav => fav.productId);
+        const batchQueries = validData.map(fav => ({
+            productId: fav.productId?._id,
+            variantKey: normalizeKey(fav.variants || [])
+        }));
 
-                if (!v) return false;
+        // const productIds = batchQueries.map(q => q.productId);
+        const productIds = [...new Set(batchQueries.map(q => q.productId.toString()))]
+            .map(id => new Types.ObjectId(id));
 
-                const now = new Date();
-                const bufferDate = new Date();
-                bufferDate.setDate(now.getDate() + 10);
+        const batches = await this.productBatchModel.find({
+            productId: { $in: productIds },
+            stock: { $gt: 0 },
+            $or: [
+                { expiryDate: null },
+                { expiryDate: { $gte: bufferDate } }
+            ]
+        }).lean();
 
-                if (v.expiryDate && new Date(v.expiryDate) < bufferDate) {
-                    return false;
-                }
+        const batchMap = new Map();
 
-                return true;
-            }).map(fav => {
-                const product = fav.productId as any;
-                if (!product) return null;
+        for (const b of batches) {
+            const key = `${b.productId}-${b.variantValues.sort().join('-')}`;
 
-                const normalize = (arr: string[]) => arr.slice().sort().join('-');
+            // Keep earliest expiry (FEFO)
+            if (!batchMap.has(key) ||
+                (b.expiryDate && b.expiryDate < batchMap.get(key).expiryDate)) {
+                batchMap.set(key, b);
+            }
+        }
 
-                const v = product?.variants?.find(v =>
-                    normalize(v.values) === normalize(fav.variants || [])
-                ) || product?.variants?.[0];
-                if (!v) return null;
+        for (const fav of data) {
+            const product = fav.productId as any;
+            if (!product || product.status !== 'active' || product.approveStatus !== 'APPROVED') continue;
 
-                const originalPrice = v?.price || 0;
-                const discount = v?.discountPercentage || 0;
+            const variantKey = normalizeKey(fav.variants?.length ? fav.variants : ['default']);
 
-                const finalPrice =
-                    originalPrice - (originalPrice * discount) / 100;
+            const v = product.variants.find(v =>
+                normalizeKey(v.values) === variantKey
+            );
 
-                return {
-                    id: product?._id,
-                    title: product?.title,
-                    image: product?.images?.[0] || '',
-                    price: finalPrice,
-                    originalPrice,
-                    discount,
-                    stock: v?.stock || 0,
-                    inStock: (v?.stock || 0) > 0,
-                    categories: product?.categories,
-                    giRegions: product?.giRegions,
-                    variant: fav.variants || [],
-                };
-            }).filter(Boolean)
-        };
+            if (!v) {
+                items.push({
+                    id: product._id,
+                    title: product.title,
+                    image: product.images?.[0] || '',
+                    price: 0,
+                    originalPrice: 0,
+                    discount: 0,
+                    stock: 0,
+                    inStock: false,
+                    unavailable: true,
+                    categories: product.categories,
+                    giRegions: product.giRegions,
+                    variant: variantKey.split('-'),
+                });
+                continue;
+            }
+
+            const image =
+                v.images?.length > 0
+                    ? v.images[0]
+                    : product.images?.[0] || '';
+
+            // 🔥 GET BATCH (IMPORTANT)
+            const mapKey = `${product._id}-${variantKey}`;
+            const batch = batchMap.get(mapKey);
+
+            if (!batch) {
+                items.push({
+                    id: product._id,
+                    title: product.title,
+                    image,
+                    price: 0,
+                    originalPrice: 0,
+                    discount: 0,
+                    stock: 0,
+                    inStock: false,
+                    unavailable: true,
+                    categories: product.categories,
+                    giRegions: product.giRegions,
+                    variant: variantKey.split('-'),
+                });
+                continue;
+            }
+            // 🔥 PRICE LOGIC
+            const originalPrice = batch.priceOverride ?? v.price ?? 0;
+            const discount =
+                batch.discountPercentageOverride ?? v.discountPercentage ?? 0;
+
+            const finalPrice =
+                originalPrice - (originalPrice * discount) / 100;
+
+            items.push({
+                id: product._id,
+                title: product.title,
+                image,
+                price: finalPrice,
+                originalPrice,
+                discount,
+                stock: batch.stock,
+                inStock: batch.stock > 0,
+                categories: product.categories,
+                giRegions: product.giRegions,
+                variant: variantKey.split('-'),
+            });
+        }
+
+        return items;
     }
 
     async remove(
@@ -100,7 +165,7 @@ export class FavoritesService {
         variants: string[] = []
     ): Promise<{ deletedCount?: number }> {
         const normalize = (arr: string[]) => arr.slice().sort();
-        const normalizedVariants = normalize(variants);
+        const normalizedVariants = normalize(variants.length ? variants : ['default']);
 
         return this.favoriteModel.deleteOne({
             userId: new Types.ObjectId(userId),
@@ -124,7 +189,7 @@ export class FavoritesService {
             const pId = new Types.ObjectId(productId);
 
             const normalize = (arr: string[]) => arr.slice().sort();
-            const normalizedVariants = normalize(variants);
+            const normalizedVariants = normalize(variants.length ? variants : ['default']);
 
             const exists = await this.favoriteModel.findOne({
                 userId: uId,

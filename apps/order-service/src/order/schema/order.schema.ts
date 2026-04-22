@@ -16,7 +16,7 @@ export class Order {
     {
       productId: { type: Types.ObjectId, ref: 'Product' },
       sellerId: { type: Types.ObjectId, ref: 'Seller' },
-      variant: { type: [String], default: [] },
+      variantValues: { type: [String], default: [] },
       title: String,
       quantity: Number,
       price: Number,
@@ -29,7 +29,7 @@ export class Order {
   items: {
     productId: Types.ObjectId;
     sellerId: Types.ObjectId;
-    variant: string[];
+    variantValues: string[];
     quantity: number;
     price: number;
     originalPrice: number;

@@ -5,12 +5,10 @@ import { Order, OrderDocument } from './schema/order.schema';
 import { OrderStatus } from './order-status.enum';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import { ProductBatch, ProductBatchDocument } from 'apps/product-service/src/products/schema/product-batch.schema';
 
 @Injectable()
 export class OrderService {
-  private normalize(arr: string[]) {
-    return arr.slice().sort().join('-');
-  }
 
   constructor(
     @InjectModel(Order.name)
@@ -18,6 +16,8 @@ export class OrderService {
     @InjectModel('User')
     private userModel: Model<any>,
     private httpService: HttpService,
+    @InjectModel(ProductBatch.name)
+    private productBatchModel: Model<ProductBatchDocument>,
   ) { }
 
   async placeOrder(userId: string, token: string, checkoutData: {
@@ -43,144 +43,144 @@ export class OrderService {
           },
         }),
       );
-
       const cart = cartRes.data;
-
-      // const cart = Array.isArray(cartList) ? cartList[0] : cartList;
 
       const cartItems = cart?.items || [];
 
-      if (!cartItems || cartItems.length === 0) {
+      if (!cartItems.length) {
         throw new BadRequestException('Cart is empty');
       }
 
-      const totalAmount = cartItems.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0,
+      const normalize = (arr: string[]) => arr.slice().sort().join('-');
+
+      const productIds = cartItems.map(i =>
+        typeof i.productId === 'object' ? i.productId._id : i.productId
       );
+      const bufferDate = new Date();
+      bufferDate.setDate(bufferDate.getDate() + 10);
 
-      const updatedProducts: { id: string; qty: number; variant: string[] }[] = [];
+      // 🔥 FETCH ALL BATCHES ONCE
+      const batches = await this.productBatchModel.find({
+        productId: { $in: productIds },
+        stock: { $gt: 0 },
+        $or: [
+          { expiryDate: null },
+          { expiryDate: { $gte: bufferDate } }
+        ]
+      }).lean();
 
-      try {
-        // ✅ Step 1: Validate stock
+      const batchMap = new Map();
 
-        for (const item of cartItems) {
-          if (!item.productId || !item.productId.variants) {
-            throw new BadRequestException('Invalid product data');
-          }
-          const product = item.productId;
+      for (const b of batches) {
+        const key = `${b.productId}-${b.variantValues.sort().join('-')}`;
 
-          const selectedVariant = product.variants.find(v =>
-            this.normalize(v.values) === this.normalize(item.variant || [])
-          );
+        if (!batchMap.has(key)) batchMap.set(key, []);
+        batchMap.get(key).push(b);
+      }
 
-          if (!selectedVariant) {
-            throw new BadRequestException('Variant not found');
-          }
+      // ✅ Step 1: Validate stock
+      for (const item of cartItems) {
+        const product = item.productId;
 
-          const now = new Date();
-          const bufferDate = new Date();
-          bufferDate.setDate(now.getDate() + 10);
+        const variantKey = normalize(item.variant);
 
-          if (selectedVariant.expiryDate && new Date(selectedVariant.expiryDate) < bufferDate) {
-            throw new BadRequestException(`Product ${product.title} is near expiry`);
-          }
+        const key = `${product._id}-${variantKey}`;
 
-          if (!selectedVariant || selectedVariant.stock < item.quantity) {
-            throw new BadRequestException(
-              `Only ${selectedVariant.stock} items available!!`
-            );
-          }
+        const batchList = batchMap.get(key) || [];
+
+        const totalStock = batchList.reduce((sum, b) => sum + b.stock, 0);
+
+        if (item.quantity > totalStock) {
+          throw new BadRequestException(`Only ${totalStock} available for ${product.title}`);
         }
+      }
 
-        // ✅ Step 2: Reduce stock
-        for (const item of cartItems) {
-          const productId =
-            typeof item.productId === 'object'
-              ? item.productId._id
-              : item.productId;
+      // ✅ Step 2: Reduce stock
+      for (const item of cartItems) {
+        const product = item.productId;
 
-          await firstValueFrom(
-            this.httpService.patch(
-              `http://localhost:3002/products/${productId}/reduce-stock`,
-              {
-                quantity: item.quantity,
-                variant: item.variant
-              },
-              {
-                headers: {
-                  Authorization: token.startsWith('Bearer ')
-                    ? token
-                    : `Bearer ${token}`,
-                },
-              },
-            ),
-          );
+        const key = `${product._id}-${normalize(item.variant)}`;
 
-          updatedProducts.push({
-            id: productId,
-            qty: item.quantity,
-            variant: item.variant,
+        const batchList = (batchMap.get(key) || [])
+          .sort((a, b) => {
+            const aTime = a.expiryDate ? new Date(a.expiryDate).getTime() : Infinity;
+            const bTime = b.expiryDate ? new Date(b.expiryDate).getTime() : Infinity;
+            return aTime - bTime;
           });
-        }
 
-      } catch (err) {
-        // 🔥 ROLLBACK
-        for (const p of updatedProducts) {
-          await firstValueFrom(
-            this.httpService.patch(
-              `http://localhost:3002/products/${p.id}/restore-stock`,
-              {
-                quantity: p.qty,
-                variant: p.variant
-              },
-              {
-                headers: {
-                  Authorization: token.startsWith('Bearer ')
-                    ? token
-                    : `Bearer ${token}`,
-                },
-              },
-            ),
+        let remaining = item.quantity;
+
+        for (const b of batchList) {
+          if (remaining <= 0) break;
+
+          const deduct = Math.min(b.stock, remaining);
+
+          const updated = await this.productBatchModel.findOneAndUpdate(
+            {
+              _id: b._id,
+              stock: { $gte: deduct } // 🔥 IMPORTANT CONDITION
+            },
+            {
+              $inc: { stock: -deduct }
+            },
+            { new: true }
           );
-        }
 
-        throw err;
+          if (!updated) {
+            throw new BadRequestException('Stock changed, please try again');
+          }
+
+          remaining -= deduct;
+        }
+        if (remaining > 0) {
+          throw new BadRequestException('Stock mismatch');
+        }
       }
 
       // order creation..
+      const items = cartItems.map(item => {
+        const product = item.productId;
+
+        const key = `${product._id}-${normalize(item.variant)}`;
+        const batchList = batchMap.get(key) || [];
+
+        const firstBatch = batchList.sort((a, b) => {
+          const aTime = a.expiryDate ? new Date(a.expiryDate).getTime() : Infinity;
+          const bTime = b.expiryDate ? new Date(b.expiryDate).getTime() : Infinity;
+          return aTime - bTime;
+        })[0];
+
+        const variant = product.variants.find(v =>
+          normalize(v.values) === normalize(item.variant)
+        );
+
+        const originalPrice = firstBatch?.priceOverride ?? variant?.price ?? 0;
+        const discount = firstBatch?.discountPercentageOverride ?? variant?.discountPercentage ?? 0;
+
+        const finalPrice = originalPrice - (originalPrice * discount) / 100;
+
+        return {
+          productId: product._id,
+          sellerId: item.sellerId,
+          variantValues: item.variant?.length ? item.variant : ['default'],
+          title: product?.title || 'Unknown Product',
+          quantity: item.quantity,
+          price: finalPrice,
+          originalPrice,
+          discount,
+          isReturnAllowed: product.isReturnAllowed || false,
+          returnValidityDays: product.returnValidityDays || 0,
+        };
+      });
+
+      const totalAmount = items.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+      );
       const order = await this.orderModel.create({
         userId,
-        items: cartItems.map(item => {
-          const product = item.productId;
-
-          return {
-            productId: product._id,
-            sellerId: item.sellerId,
-            variant: item.variant || [],
-            title: product?.title || 'Unknown Product',
-            quantity: item.quantity,
-            price: item.price,
-            originalPrice: item.originalPrice || item.price,
-            discount: item.discount || 0,
-
-            // 🔥 ADD THIS
-            isReturnAllowed: product.isReturnAllowed || false,
-            returnValidityDays: product.returnValidityDays || 0,
-          }
-          // productId:
-          //   typeof item.productId === 'object'
-          //     ? item.productId._id
-          //     : item.productId,
-          // sellerId: item.sellerId,
-          // variant: item.variant || [],
-          // title: item.productId?.title || 'Unknown Product',
-          // quantity: item.quantity,
-          // price: item.price,
-          // originalPrice: item.originalPrice || item.price,
-          // discount: item.discount || 0,
-        }),
-        totalAmount,
+        items: items,
+        totalAmount: totalAmount,
         status: OrderStatus.PLACED,
         receiverName: checkoutData.receiverName,
         receiverPhone: checkoutData.receiverPhone,
@@ -206,7 +206,6 @@ export class OrderService {
         );
       }
 
-      // OPTIONAL: clear cart after order
       await firstValueFrom(
         this.httpService.delete('http://localhost:3002/cart/clear/all', {
           headers: {
@@ -220,14 +219,7 @@ export class OrderService {
       return order;
 
     } catch (err) {
-      const error = err as any;
-
-      console.error(
-        'Order-service cart call failed:',
-        error?.response?.data || error?.message || error
-      );
-
-      throw error;
+      throw err;
     }
   }
 
@@ -254,7 +246,7 @@ export class OrderService {
     if (user.role === 'SELLER') {
 
       return this.orderModel
-        .find({ 'items.sellerId': user.sub })   // ✅ filter by sellerId
+        .find({ 'items.sellerId': user.sub })
         .populate('userId', 'name email phone address')
         .populate('items.productId', 'title variants')
         .sort({ createdAt: -1 })
@@ -289,24 +281,17 @@ export class OrderService {
     ) {
       for (const item of order.items) {
 
-        const productId =
-          typeof item.productId === 'object'
-            ? item.productId.toString()
-            : item.productId;
-
-        await firstValueFrom(
-          this.httpService.patch(
-            `http://localhost:3002/products/${productId}/restore-stock`,
-            {
-              quantity: item.quantity,
-              variant: item.variant
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            },
-          ),
+        await this.productBatchModel.updateMany(
+          {
+            productId: item.productId,
+            variantValues: item.variantValues
+          },
+          { $inc: { stock: item.quantity } },
+          // {
+          //   headers: {
+          //     Authorization: `Bearer ${token}`,
+          //   },
+          // },
         );
       }
     }
@@ -354,20 +339,16 @@ export class OrderService {
 
     // 🔥 RESTORE STOCK (+1)
     for (const item of order.items) {
-      await firstValueFrom(
-        this.httpService.patch(
-          `http://localhost:3002/products/${item.productId}/restore-stock`,
-          {
-            quantity: item.quantity,
-            variant: item.variant
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            }
-          }
-        )
+      await this.productBatchModel.updateMany(
+        {
+          productId: item.productId,
+          variantValues: item.variantValues
+        },
+        {
+          $inc: { stock: item.quantity }
+        },
       );
+
     }
 
     order.status = OrderStatus.RETURNED;
@@ -390,7 +371,7 @@ export class OrderService {
     }
 
     if (order.status !== OrderStatus.DELIVERED) {
-      throw new BadRequestException('Return allowed only after delivery');
+      throw new BadRequestException('Replacement allowed only after delivery');
     }
 
     // 🔥 VALIDITY CHECK (same as return)
@@ -414,55 +395,53 @@ export class OrderService {
 
     // 🔥 STEP 1: RESTORE OLD PRODUCT (+1)
     for (const item of order.items) {
-      await firstValueFrom(
-        this.httpService.patch(
-          `http://localhost:3002/products/${item.productId}/restore-stock`,
-          {
-            quantity: item.quantity,
-            variant: item.variant
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            }
-          }
-        )
+      await this.productBatchModel.updateMany(
+        {
+          productId: item.productId,
+          variantValues: item.variantValues
+        },
+        {
+          $inc: { stock: item.quantity }
+        }
       );
-    }
-
-    // 🔥 CHECK STOCK BEFORE REDUCE
-    for (const item of order.items) {
-      const productRes = await firstValueFrom(
-        this.httpService.get(`http://localhost:3002/products/${item.productId}`)
-      );
-
-      const product = productRes.data;
-
-      const variant = product.variants.find(v =>
-        this.normalize(v.values) === this.normalize(item.variant)
-      );
-
-      if (!variant || variant.stock < item.quantity) {
-        throw new BadRequestException('Replacement product out of stock');
-      }
     }
 
     // 🔥 STEP 2: REDUCE NEW PRODUCT (-1)
     for (const item of order.items) {
-      await firstValueFrom(
-        this.httpService.patch(
-          `http://localhost:3002/products/${item.productId}/reduce-stock`,
+      let remaining = item.quantity;
+
+      const batches = await this.productBatchModel.find({
+        productId: item.productId,
+        variantValues: item.variantValues,
+        stock: { $gt: 0 }
+      }).sort({ expiryDate: 1 });
+
+      for (const b of batches) {
+        if (remaining <= 0) break;
+
+        const deduct = Math.min(b.stock, remaining);
+
+        const updated = await this.productBatchModel.findOneAndUpdate(
           {
-            quantity: item.quantity,
-            variant: item.variant
+            _id: b._id,
+            stock: { $gte: deduct }
           },
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            }
-          }
-        )
-      );
+            $inc: { stock: -deduct }
+          },
+          { new: true }
+        );
+
+        if (!updated) {
+          throw new BadRequestException('Replacement stock not available');
+        }
+
+        remaining -= deduct;
+      }
+
+      if (remaining > 0) {
+        throw new BadRequestException('Replacement stock not available');
+      }
     }
 
     order.status = OrderStatus.REPLACED;

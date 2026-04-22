@@ -7,6 +7,7 @@ import { Category, CategoryDocument } from '../categories/schema/category.schema
 import cloudinary from '../common/cloudinary/cloudinary.config';
 import { MailService } from '../common/mail/mail.service';
 import { ProductApproveStatus } from '../enum/product-approve-status.enum';
+import { ProductBatch, ProductBatchDocument } from './schema/product-batch.schema';
 
 @Injectable()
 export class ProductsService {
@@ -14,35 +15,41 @@ export class ProductsService {
         @InjectModel(Product.name) private productModel: Model<ProductDocument>,
         @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
         private mailService: MailService,
+        @InjectModel(ProductBatch.name)
+        private productBatchModel: Model<ProductBatchDocument>,
     ) { }
 
     async findAll(user: any) {
         const now = new Date();
-        const futureDate= new Date();
-        futureDate.setDate(now.getDate()+10);
+        const futureDate = new Date();
+        futureDate.setDate(now.getDate() + 10);
 
         if (!user || user.role === 'USER') {
-            return this.productModel.find({
-                status: 'active', approveStatus: ProductApproveStatus.APPROVED,
-                $or: [
-                    {
-                        variants: {
-                            $elemMatch: {
-                                expiryDate: { $exists: false }
-                            }
-                        }
-                    },
-                    {
-                        variants: {
-                            $elemMatch: {
-                                expiryDate: { $gte: futureDate }
-                            }
-                        }
+            const validProductIds = await this.productBatchModel.aggregate([
+                {
+                    $match: {
+                        $or: [
+                            { expiryDate: null },
+                            { expiryDate: { $gte: futureDate } }
+                        ],
+                        stock: { $gt: 0 }
                     }
-                ]
-            })
-                .populate('categories', 'name')
-                .populate('giRegions', 'name')
+                },
+                {
+                    $group: {
+                        _id: "$productId"
+                    }
+                }
+            ]);
+
+            const ids = validProductIds.map(p => p._id);
+
+            return this.productModel.find({
+                _id: { $in: ids },
+                status: 'active',
+                approveStatus: ProductApproveStatus.APPROVED
+            }).populate('categories', 'name').
+                populate('giRegions', 'name')
                 .lean();
         }
 
@@ -64,18 +71,18 @@ export class ProductsService {
     async findById(id: string) {
         const product = await this.productModel.findById(id).lean();
 
-        if (!product || product.status !== 'active') {
+        if (!product || product.status !== 'active' || product.approveStatus !== 'APPROVED') {
             throw new NotFoundException('Product not available');
         }
         return product;
     }
 
     async findByCategory(categoryId: string) {
-        return this.productModel.find({ categories: categoryId, status: 'active' }).lean();
+        return this.productModel.find({ categories: categoryId, status: 'active', approveStatus: ProductApproveStatus.APPROVED }).lean();
     }
 
     async findByGIRegion(regionId: string) {
-        return this.productModel.find({ giRegions: regionId, status: 'active' }).lean();
+        return this.productModel.find({ giRegions: regionId, status: 'active', approveStatus: ProductApproveStatus.APPROVED }).lean();
     }
 
     async create(data: any, user: any) {
@@ -98,9 +105,9 @@ export class ProductsService {
                 {
                     values: ['default'],
                     price: data.price || 0,
-                    stock: data.stock || 0,
                     discountPercentage: data.discountPercentage || 0,
-                    sku: 'DEFAULT'
+                    sku: 'DEFAULT',
+                    images: data.images || [],
                 }
             ];
         }
@@ -111,13 +118,17 @@ export class ProductsService {
                 ...v,
                 values: v.values.sort(),
                 discountPercentage: v.discountPercentage || 0,
-                sku: v.sku || `${data.title.substring(0, 3).toUpperCase()}-${index + 1}`
+                sku: v.sku || `${data.title.substring(0, 3).toUpperCase()}-${index + 1}`,
+                images: v.images || [],
             }));
         }
 
         // 🔥 EXPIRY VALIDATION
         if (requiresExpiry) {
-            const hasExpiry = data.variants?.every(v => v.expiryDate);
+            if (!data.initialBatches || data.initialBatches.length === 0) {
+                throw new BadRequestException('Expiry batches required');
+            }
+            const hasExpiry = data.initialBatches?.every(b => b.expiryDate);
 
             if (!hasExpiry) {
                 throw new BadRequestException('Expiry date is required for selected category');
@@ -134,11 +145,38 @@ export class ProductsService {
             }
         }
 
+        if (!data.initialBatches || data.initialBatches.length === 0) {
+            throw new BadRequestException('Initial stock is required');
+        }
+
+        const validVariants = data.variants.map(v => v.values.sort().join('-'));
+
+        for (const batch of data.initialBatches) {
+            const key = batch.variantValues.sort().join('-');
+
+            if (!validVariants.includes(key)) {
+                throw new BadRequestException('Invalid variant in batch');
+            }
+        }
+
         const product = await this.productModel.create({
             ...data,
             sellerId: user.sub,
             approveStatus: ProductApproveStatus.PENDING,
         });
+
+        if (data.initialBatches && data.initialBatches.length > 0) {
+            await this.productBatchModel.insertMany(
+                data.initialBatches.map(batch => ({
+                    productId: product._id,
+                    variantValues: batch.variantValues.sort(),
+                    stock: batch.stock,
+                    expiryDate: batch.expiryDate || null,
+                    priceOverride: batch.priceOverride || null,
+                    discountPercentageOverride: batch.discountPercentageOverride || null,
+                }))
+            );
+        }
 
         return product;
     }
@@ -246,51 +284,41 @@ export class ProductsService {
 
     async reduceStock(productId: string, variantValues: string[], qty: number) {
         variantValues = variantValues.sort();
-        const product = await this.productModel.findOneAndUpdate(
-            {
-                _id: productId,
-                variants: {
-                    $elemMatch: {
-                        values: variantValues,
-                        stock: { $gte: qty } // ✅ CHECK + UPDATE together
-                    }
-                }
-            },
-            {
-                $inc: {
-                    "variants.$.stock": -qty
-                }
-            },
-            { new: true }
-        );
+        const batch = await this.productBatchModel
+            .findOne({
+                productId,
+                variantValues,
+                stock: { $gte: qty },
+                $or: [
+                    { expiryDate: null },
+                    { expiryDate: { $gte: new Date() } }
+                ]
+            })
+            .sort({ expiryDate: 1 }); // 🔥 FEFO
 
-        if (!product) {
+        if (!batch) {
             throw new BadRequestException('Insufficient stock or variant not found');
         }
 
-        return product;
+        batch.stock -= qty;
+        await batch.save();
+
+        return batch;
     }
 
     async restoreStock(productId: string, variantValues: string[], qty: number) {
         variantValues = variantValues.sort();
-        const product = await this.productModel.findOneAndUpdate(
-            {
-                _id: productId,
-                "variants.values": variantValues
-            },
-            {
-                $inc: {
-                    "variants.$.stock": qty
-                }
-            },
-            { new: true }
-        );
+        const batch = await this.productBatchModel.findOne({
+            productId,
+            variantValues: variantValues.sort()
+        });
 
-        if (!product) {
-            throw new BadRequestException('Variant not found');
-        }
+        if (!batch) throw new BadRequestException('Batch not found');
 
-        return product;
+        batch.stock += qty;
+        await batch.save();
+
+        return batch;
     }
 
     async getSellerProducts(sellerId: string) {

@@ -32,9 +32,8 @@ export class Product {
       price: Number,
       mrp: Number,
       discountPercentage: Number,
-      stock: Number,
       sku: String,
-      expiryDate: { type: Date, required: false },
+      images: { type: [String], default: [] },
     },
   ])
   variants: {
@@ -42,9 +41,8 @@ export class Product {
     price: number;
     mrp?: number;
     discountPercentage?: number;
-    stock: number;
     sku?: string;
-    expiryDate?: Date;
+    images: string[];
   }[];
 
   @Prop({ type: [String], default: [] })

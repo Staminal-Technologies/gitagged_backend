@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Cart, CartDocument } from './schema/cart.schema';
 import { Product, ProductDocument } from '../products/schema/product.schema';
+import { ProductBatch, ProductBatchDocument } from '../products/schema/product-batch.schema';
 
 @Injectable()
 export class CartService {
@@ -16,6 +17,8 @@ export class CartService {
         private cartModel: Model<CartDocument>,
         @InjectModel(Product.name)
         private productModel: Model<ProductDocument>,
+        @InjectModel(ProductBatch.name)
+        private productBatchModel: Model<ProductBatchDocument>,
     ) { }
 
     // Add or update cart item
@@ -35,9 +38,17 @@ export class CartService {
         const uId = new Types.ObjectId(userId);
         const pId = new Types.ObjectId(productId);
 
-        const product = await this.productModel.findById(pId).select('sellerId variants');
+        const product = await this.productModel.findById(pId).select('sellerId variants status approveStatus');
 
         if (!product) throw new NotFoundException('Product not found');
+        if (product.status !== 'active' || product.approveStatus !== 'APPROVED') {
+            throw new BadRequestException('Product not available');
+        }
+
+        const normalizeArr = (arr: string[]) => arr.slice().sort();
+        variantValues = normalizeArr(
+            variantValues.length ? variantValues : ['default']
+        );
 
         const selectedVariant = product.variants.find(v =>
             this.normalize(v.values) === this.normalize(variantValues)
@@ -47,32 +58,46 @@ export class CartService {
             throw new BadRequestException('Variant not found');
         }
 
-        // 🔥 EXPIRY CHECK
-        if (selectedVariant.expiryDate && new Date(selectedVariant.expiryDate) < new Date()) {
-            throw new BadRequestException('Product is expired');
+        // 🔥 FIND BATCH (MOST IMPORTANT)
+        const now = new Date();
+        const bufferDate = new Date();
+        bufferDate.setDate(now.getDate() + 10);
+
+        const batch = await this.productBatchModel.find({
+            productId: pId,
+            variantValues,
+            stock: { $gt: 0 },
+            $or: [
+                { expiryDate: null },
+                { expiryDate: { $gte: bufferDate } }
+            ]
+        }).sort({ expiryDate: 1 });
+
+        if (!batch || batch.length === 0) {
+            throw new BadRequestException('Product not available');
         }
 
-        if (selectedVariant.stock <= 0) {
-            throw new BadRequestException('Product is out of stock');
+        // 🔥 STOCK CHECK
+        const totalStock = batch.reduce((sum, b) => sum + b.stock, 0);
+        if (quantity > totalStock) {
+            throw new BadRequestException(`Only ${totalStock} available`);
         }
 
-        let cart = await this.cartModel.findOne({ userId: uId });
+        const firstBatch = batch[0];
 
-        const discount = selectedVariant.discountPercentage || 0;
+        // 🔥 PRICE
+        const originalPrice = firstBatch.priceOverride ?? selectedVariant.price ?? 0;
+        const discount = firstBatch.discountPercentageOverride ?? selectedVariant.discountPercentage ?? 0;
 
         const finalPrice =
-            selectedVariant.price -
-            (selectedVariant.price * discount) / 100;
+            originalPrice - (originalPrice * discount) / 100;
+
+        let cart = await this.cartModel.findOne({ userId: uId });
 
         variantValues = variantValues.slice().sort();
 
         // 🆕 Create cart
         if (!cart) {
-            if (quantity > selectedVariant.stock) {
-                throw new BadRequestException(
-                    `Only ${selectedVariant.stock} items available`,
-                );
-            }
 
             return this.cartModel.create({
                 userId: uId,
@@ -83,7 +108,7 @@ export class CartService {
                         variant: variantValues,
                         quantity,
                         price: finalPrice,
-                        originalPrice: selectedVariant.price,
+                        originalPrice: originalPrice,
                         discount: discount,
                     },
                 ],
@@ -97,17 +122,17 @@ export class CartService {
         if (existingItem) {
             const newQty = existingItem.quantity + quantity;
 
-            if (newQty > selectedVariant.stock) {
+            if (newQty > totalStock) {
                 throw new BadRequestException(
-                    `Only ${selectedVariant.stock} items available`,
+                    `Only ${totalStock} items available`,
                 );
             }
 
             existingItem.quantity = newQty;
         } else {
-            if (quantity > selectedVariant.stock) {
+            if (quantity > totalStock) {
                 throw new BadRequestException(
-                    `Only ${selectedVariant.stock} items available`,
+                    `Only ${totalStock} items available`,
                 );
             }
 
@@ -117,7 +142,7 @@ export class CartService {
                 variant: variantValues,
                 quantity,
                 price: finalPrice,
-                originalPrice: selectedVariant.price,
+                originalPrice: originalPrice,
                 discount: discount,
             });
         }
@@ -129,35 +154,99 @@ export class CartService {
     async getUserCart(userId: string) {
         const uId = new Types.ObjectId(userId);
 
-        return this.cartModel
+        const cart = await this.cartModel
             .findOne({ userId: uId })
             .populate('items.productId')
-            .lean()
-            .then(cart => {
-                if (!cart) return { items: [] };
-                return {
-                    items: cart.items
-                        .filter((item: any) => {
-                            const product = item.productId;
+            .lean();
 
-                            const variant = product?.variants?.find((v: any) =>
-                                this.normalize(v.values) === this.normalize(item.variant || [])
-                            );
+        if (!cart) return { items: [] };
 
-                            if (!variant) return false;
+        const normalizeKey = (arr: string[]) => arr.slice().sort().join('-');
 
-                            if (variant.expiryDate && new Date(variant.expiryDate) < new Date()) {
-                                return false;
-                            }
+        const bufferDate = new Date();
+        bufferDate.setDate(bufferDate.getDate() + 10);
 
-                            return true;
-                        })
-                        .map((item: any) => ({
-                            ...item,
-                            productId: item.productId
-                        }))
-                };
+        const productIds = [
+            ...new Set(
+                cart.items
+                    .filter(item => item.productId && item.productId._id)
+                    .map(item => item.productId._id.toString())
+            )
+        ].map(id => new Types.ObjectId(id));
+
+        const batches = await this.productBatchModel.find({
+            productId: { $in: productIds },
+            stock: { $gt: 0 },
+            $or: [
+                { expiryDate: null },
+                { expiryDate: { $gte: bufferDate } }
+            ]
+        }).lean();
+
+        const batchMap = new Map();
+
+        for (const b of batches) {
+            const key = `${b.productId}-${b.variantValues.sort().join('-')}`;
+
+            if (!batchMap.has(key) ||
+                (b.expiryDate && b.expiryDate < batchMap.get(key).expiryDate)) {
+                batchMap.set(key, b);
+            }
+        }
+
+        const filteredItems = [];
+
+        for (const item of cart.items) {
+            const product = item.productId as any;
+
+            if (!product || product.status !== 'active' || product.approveStatus !== 'APPROVED') {
+                continue;
+            }
+
+            const variantKey = normalizeKey(item.variant);
+
+            const mapKey = `${product._id}-${variantKey}`;
+
+            const batch = batchMap.get(mapKey);
+
+            if (!batch) {
+                filteredItems.push({
+                    ...item,
+                    unavailable: true,
+                    inStock: false
+                });
+                continue;
+            }
+
+            const selectedVariant = product.variants.find(v =>
+                normalizeKey(v.values) === variantKey
+            );
+
+            if (!selectedVariant) {
+                filteredItems.push({
+                    ...item,
+                    unavailable: true,
+                    inStock: false
+                });
+                continue;
+            }
+
+            const originalPrice = batch.priceOverride ?? selectedVariant?.price ?? 0;
+            const discount = batch.discountPercentageOverride ?? selectedVariant?.discountPercentage ?? 0;
+
+            const finalPrice = originalPrice - (originalPrice * discount) / 100;
+
+            filteredItems.push({
+                ...item,
+                price: finalPrice,
+                originalPrice,
+                discount,
+                inStock: true,
+                productId: item.productId
             });
+        }
+
+        return { items: filteredItems };
     }
 
     // Update quantity
@@ -184,10 +273,13 @@ export class CartService {
 
         const product = await this.productModel.findById(pId);
 
-        if (!product) throw new NotFoundException('Product not found');
-
-        variantValues = variantValues.slice().sort();
-
+        if (!product || product.status !== 'active' || product.approveStatus !== 'APPROVED') {
+            throw new BadRequestException('Product not available');
+        }
+        const normalizeArr = (arr: string[]) => arr.slice().sort();
+        variantValues = normalizeArr(
+            variantValues.length ? variantValues : ['default']
+        );
         const selectedVariant = product.variants.find(v =>
             this.normalize(v.values) === this.normalize(variantValues)
         );
@@ -196,14 +288,22 @@ export class CartService {
             throw new BadRequestException('Variant not found');
         }
 
-        if (selectedVariant.expiryDate && new Date(selectedVariant.expiryDate) < new Date()) {
-            throw new BadRequestException('Product is expired');
-        }
+        const batch = await this.productBatchModel.find({
+            productId: pId,
+            variantValues,
+            stock: { $gt: 0 },
+            $or: [
+                { expiryDate: null },
+                { expiryDate: { $gte: new Date(new Date().setDate(new Date().getDate() + 10)) } }
+            ]
+        }).sort({ expiryDate: 1 });
 
-        if (quantity > selectedVariant.stock) {
-            throw new BadRequestException(
-                `Only ${selectedVariant.stock} items available`
-            );
+        if (!batch || batch.length === 0) throw new BadRequestException('Product not available');
+
+        const totalStock = batch.reduce((sum, b) => sum + b.stock, 0);
+
+        if (quantity > totalStock) {
+            throw new BadRequestException(`Only ${totalStock} items available`);
         }
 
         item.quantity = quantity;
@@ -215,6 +315,12 @@ export class CartService {
     async removeItem(userId: string, productId: string, variantValues: string[]) {
         const uId = new Types.ObjectId(userId);
         const pId = new Types.ObjectId(productId);
+
+        const normalizeArr = (arr: string[]) => arr.slice().sort();
+
+        variantValues = normalizeArr(
+            variantValues.length ? variantValues : ['default']
+        );
 
         const cart = await this.cartModel.findOne({ userId: uId });
         if (!cart) throw new NotFoundException('Cart not found');
