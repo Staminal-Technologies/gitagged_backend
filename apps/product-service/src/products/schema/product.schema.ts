@@ -67,6 +67,9 @@ export class Product {
   @Prop({ default: 0 })
   returnValidityDays: number;
 
+  @Prop({ default: null })
+  rejectionReason: string;
+
   @Prop({ default: 'inactive' })
   status: string;
 

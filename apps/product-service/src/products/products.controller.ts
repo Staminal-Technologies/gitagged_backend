@@ -27,6 +27,11 @@ export class ProductsController {
     return this.service.getPendingProducts();
   }
 
+  @Get(':id/batches')
+  async getBatches(@Param('id') id: string) {
+    return this.service.getBatchesByProductId(id);
+  }
+
   @Get(':id')
   async getOne(@Param('id') id: string) {
     return this.service.findById(id);
@@ -115,8 +120,8 @@ export class ProductsController {
   }
 
   @Patch(':id/reject')
-  rejectProduct(@Param('id') id: string) {
-    return this.service.rejectProduct(id);
+  rejectProduct(@Param('id') id: string, @Body() body: { reason: string }) {
+    return this.service.rejectProduct(id, body.reason);
   }
 
   @Patch(':id/approve-update')

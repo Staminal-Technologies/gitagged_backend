@@ -8,6 +8,7 @@ import cloudinary from '../common/cloudinary/cloudinary.config';
 import { MailService } from '../common/mail/mail.service';
 import { ProductApproveStatus } from '../enum/product-approve-status.enum';
 import { ProductBatch, ProductBatchDocument } from './schema/product-batch.schema';
+import { UserDocument, User } from '../users/schema/users.schema';
 
 @Injectable()
 export class ProductsService {
@@ -17,6 +18,8 @@ export class ProductsService {
         private mailService: MailService,
         @InjectModel(ProductBatch.name)
         private productBatchModel: Model<ProductBatchDocument>,
+        @InjectModel(User.name)
+        private userModel: Model<UserDocument>,
     ) { }
 
     async findAll(user: any) {
@@ -137,11 +140,12 @@ export class ProductsService {
 
         // 🔥 RETURN VALIDATION
         if (requiresReturn) {
-            data.isReturnAllowed = true;
-        }
-        if (requiresReturn) {
+            if (data.isReturnAllowed !== true) {
+                throw new BadRequestException('Return must be allowed for this category');
+            }
+
             if (!data.returnValidityDays || data.returnValidityDays <= 0) {
-                throw new BadRequestException('Return validity is required for selected category');
+                throw new BadRequestException('Return validity is required');
             }
         }
 
@@ -338,7 +342,11 @@ export class ProductsService {
         return { message: 'Product approved successfully' };
     }
 
-    async rejectProduct(productId: string) {
+    async rejectProduct(productId: string, reason: string) {
+
+        if (!reason || reason.trim() === '') {
+            throw new BadRequestException('Rejection reason required!!');
+        }
 
         const product = await this.productModel.findById(productId);
 
@@ -346,8 +354,23 @@ export class ProductsService {
 
         product.approveStatus = ProductApproveStatus.REJECTED;
         product.status = 'inactive';
+        product.rejectionReason = reason;
 
         await product.save();
+
+        //  SEND EMAIL
+        const seller = await this.userModel.findById(product.sellerId);
+
+        await this.mailService.sendEmail(
+            seller.email,
+            'Product Rejected',
+            `
+        <h2>Your product was rejected</h2>
+        <p><b>Product:</b> ${product.title}</p>
+        <p><b>Reason:</b> ${reason}</p>
+        <p>Please update and resubmit.</p>
+        `
+        );
 
         return { message: 'Product rejected' };
     }
@@ -389,6 +412,17 @@ export class ProductsService {
             .populate('sellerId', 'sellerName email')
             .populate('categories', 'name')
             .lean();
+    }
+
+    async getBatchesByProductId(productId: string) {
+        return this.productBatchModel.find({
+            productId,
+            stock: { $gt: 0 },
+            $or: [
+                { expiryDate: null },
+                { expiryDate: { $gte: new Date() } }
+            ]
+        }).lean();
     }
 
 }
