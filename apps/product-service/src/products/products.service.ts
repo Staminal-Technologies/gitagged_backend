@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import mongoose, { Model, Types } from 'mongoose';
 import { Product, ProductDocument } from './schema/product.schema';
 import slugify from 'slugify';
 import { Category, CategoryDocument } from '../categories/schema/category.schema';
@@ -415,8 +415,9 @@ export class ProductsService {
     }
 
     async getBatchesByProductId(productId: string) {
+        const objId = new Types.ObjectId(productId);
         return this.productBatchModel.find({
-            productId,
+            productId: objId,
             stock: { $gt: 0 },
             $or: [
                 { expiryDate: null },
