@@ -57,18 +57,52 @@ export class ProductsService {
         }
 
         if (user.role === 'ADMIN') {
-            return this.productModel.find()
-                .populate('categories', 'name').
-                populate('giRegions', 'name').lean();
+            const products = await this.productModel.find()
+                .populate('categories', 'name')
+                .populate('giRegions', 'name')
+                .lean();
+
+            const result = await Promise.all(
+                products.map(async (p) => {
+                    const batches = await this.productBatchModel.find({
+                        productId: p._id,
+                        stock: { $gt: 0 }
+                    });
+
+                    const totalStock = batches.reduce((sum, b) => sum + b.stock, 0);
+
+                    return {
+                        ...p,
+                        totalStock
+                    };
+                })
+            );
+
+            return result;
         }
 
-        if (user.role === 'SELLER') {
-            return this.productModel.find({ sellerId: user.sub })
-                .populate('categories', 'name').
-                populate('giRegions', 'name').lean();
-        }
+        const products = await this.productModel.find({ sellerId: user.sub })
+            .populate('categories', 'name')
+            .populate('giRegions', 'name')
+            .lean();
 
-        return [];
+        const result = await Promise.all(
+            products.map(async (p) => {
+                const batches = await this.productBatchModel.find({
+                    productId: p._id,
+                    stock: { $gt: 0 }
+                });
+
+                const totalStock = batches.reduce((sum, b) => sum + b.stock, 0);
+
+                return {
+                    ...p,
+                    totalStock
+                };
+            })
+        );
+
+        return result;
     }
 
     async findById(id: string) {
@@ -200,8 +234,12 @@ export class ProductsService {
                 throw new ForbiddenException('Not your product');
             }
 
+            if (product.approveStatus === ProductApproveStatus.PENDING) {
+                throw new BadRequestException('You cannot change the product while approval is pending');
+            }
+
             if (product.isUpdatePending) {
-                throw new BadRequestException('Already pending approval');
+                throw new BadRequestException('You cannot change the product, update request is already pending');
             }
 
             product.pendingUpdates = data;
@@ -257,6 +295,10 @@ export class ProductsService {
         const product = await this.productModel.findById(id);
         if (!product) throw new NotFoundException();
 
+        if (product.approveStatus === 'PENDING') {
+            throw new BadRequestException('Cannot delete pending Appoval product');
+        }
+
         if (user.role === 'ADMIN') {
             return this.productModel.findByIdAndDelete(id);
         }
@@ -298,7 +340,7 @@ export class ProductsService {
                     { expiryDate: { $gte: new Date() } }
                 ]
             })
-            .sort({ expiryDate: 1 }); // 🔥 FEFO
+            .sort({ expiryDate: 1 });
 
         if (!batch) {
             throw new BadRequestException('Insufficient stock or variant not found');
@@ -326,7 +368,28 @@ export class ProductsService {
     }
 
     async getSellerProducts(sellerId: string) {
-        return this.productModel.find({ sellerId }).populate('categories').populate('giRegions');
+        const products = await this.productModel.find({ sellerId })
+            .populate('categories', 'name')
+            .populate('giRegions', 'name')
+            .lean();
+
+        const result = await Promise.all(
+            products.map(async (p) => {
+                const batches = await this.productBatchModel.find({
+                    productId: p._id,
+                    stock: { $gt: 0 }
+                });
+
+                const totalStock = batches.reduce((sum, b) => sum + b.stock, 0);
+
+                return {
+                    ...p,
+                    totalStock
+                };
+            })
+        );
+
+        return result;
     }
 
     async approveProduct(productId: string) {
@@ -380,8 +443,20 @@ export class ProductsService {
 
         if (!product) throw new NotFoundException();
 
-        Object.assign(product, product.pendingUpdates);
+        const updates = product.pendingUpdates;
 
+        if (updates.variants) {
+            product.variants = updates.variants.map((v: any, i: number) => ({
+                ...v,
+                discountPercentage: updates.discountPercentage ?? 0,
+                images: v.images || [],
+            }));
+        }
+
+        Object.assign(product, {
+            ...updates,
+            variants: product.variants
+        });
         product.pendingUpdates = null;
         product.isUpdatePending = false;
         product.status = 'active';
@@ -391,11 +466,12 @@ export class ProductsService {
         return { message: 'Product update approved' };
     }
 
-    async rejectProductUpdate(productId: string) {
+    async rejectProductUpdate(productId: string, reason: string) {
         const product = await this.productModel.findById(productId);
 
         product.pendingUpdates = null;
         product.isUpdatePending = false;
+        product.rejectionReason = reason;
 
         await product.save();
 
@@ -403,7 +479,7 @@ export class ProductsService {
     }
 
     async getPendingProducts() {
-        return this.productModel.find({
+        const products = await this.productModel.find({
             $or: [
                 { approveStatus: 'PENDING' },
                 { isUpdatePending: true }
@@ -411,7 +487,24 @@ export class ProductsService {
         })
             .populate('sellerId', 'sellerName email')
             .populate('categories', 'name')
+            .populate('giRegions', 'name')  
             .lean();
+
+        const result = await Promise.all(
+            products.map(async (p) => {
+
+                const batches = await this.productBatchModel.find({
+                    productId: p._id
+                }).lean();
+
+                return {
+                    ...p,
+                    batches   // 🔥 VERY IMPORTANT
+                };
+            })
+        );
+
+        return result;
     }
 
     async getBatchesByProductId(productId: string) {

@@ -130,8 +130,8 @@ export class ProductsController {
   }
 
   @Patch(':id/reject-update')
-  rejectUpdate(@Param('id') id: string) {
-    return this.service.rejectProductUpdate(id);
+  rejectUpdate(@Param('id') id: string, @Body() body: { reason: string }) {
+    return this.service.rejectProductUpdate(id, body.reason);
   }
 
 }

@@ -174,36 +174,78 @@ export class FavoritesService {
         });
     }
 
+    // async mergeGuestFavorites(
+    //     userId: string,
+    //     guestFavourites: { productId: string, variants: string[] }[],
+    // ) {
+    //     const uId = new Types.ObjectId(userId);
+
+    //     for (const { productId, variants } of guestFavourites) {
+    //         // Validate productId before converting
+    //         if (!Types.ObjectId.isValid(productId)) {
+    //             console.log(`Skipping invalid productId: ${productId}`);
+    //             continue;
+    //         }
+    //         const pId = new Types.ObjectId(productId);
+
+    //         const normalize = (arr: string[]) => arr.slice().sort();
+    //         const normalizedVariants = normalize(variants.length ? variants : ['default']);
+
+    //         const exists = await this.favoriteModel.findOne({
+    //             userId: uId,
+    //             productId: pId,
+    //             variants: { $all: normalizedVariants, $size: normalizedVariants.length }
+    //         });
+
+    //         if (!exists) {
+    //             await this.favoriteModel.create({
+    //                 userId: uId,
+    //                 productId: pId,
+    //                 variants: normalizedVariants,
+    //             });
+    //         }
+    //     }
+    // }
+
     async mergeGuestFavorites(
         userId: string,
-        guestFavourites: { productId: string, variants: string[] }[],
+        guestFavourites: { productId: string; variants: string[] }[],
     ) {
         const uId = new Types.ObjectId(userId);
 
-        for (const { productId, variants } of guestFavourites) {
-            // Validate productId before converting
-            if (!Types.ObjectId.isValid(productId)) {
-                console.log(`Skipping invalid productId: ${productId}`);
+        const normalize = (arr: string[]) => arr.slice().sort();
+
+        for (const fav of guestFavourites) {
+
+            if (!Types.ObjectId.isValid(fav.productId)) {
+                console.log(`Skipping invalid productId: ${fav.productId}`);
                 continue;
             }
-            const pId = new Types.ObjectId(productId);
 
-            const normalize = (arr: string[]) => arr.slice().sort();
-            const normalizedVariants = normalize(variants.length ? variants : ['default']);
+            const pId = new Types.ObjectId(fav.productId);
 
-            const exists = await this.favoriteModel.findOne({
-                userId: uId,
-                productId: pId,
-                variants: { $all: normalizedVariants, $size: normalizedVariants.length }
-            });
+            const normalizedVariants = normalize(
+                fav.variants?.length ? fav.variants : ['default']
+            );
 
-            if (!exists) {
-                await this.favoriteModel.create({
+            // 🔥 MAIN FIX (NO findOne, NO create)
+            await this.favoriteModel.updateOne(
+                {
                     userId: uId,
                     productId: pId,
-                    variants: normalizedVariants,
-                });
-            }
+                    variants: normalizedVariants
+                },
+                {
+                    $set: {
+                        userId: uId,
+                        productId: pId,
+                        variants: normalizedVariants
+                    }
+                },
+                {
+                    upsert: true
+                }
+            );
         }
     }
 
