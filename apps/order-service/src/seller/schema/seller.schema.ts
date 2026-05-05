@@ -7,7 +7,6 @@ export type SellerDocument = Seller & Document;
 
 @Schema({ timestamps: true })
 export class Seller {
-
   // 🔗 Link to user account
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   userId: Types.ObjectId;

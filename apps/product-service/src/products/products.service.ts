@@ -487,7 +487,7 @@ export class ProductsService {
         })
             .populate('sellerId', 'sellerName email')
             .populate('categories', 'name')
-            .populate('giRegions', 'name')  
+            .populate('giRegions', 'name')
             .lean();
 
         const result = await Promise.all(
@@ -496,10 +496,12 @@ export class ProductsService {
                 const batches = await this.productBatchModel.find({
                     productId: p._id
                 }).lean();
+                const totalStock = batches.reduce((sum, b) => sum + b.stock, 0);
 
                 return {
                     ...p,
-                    batches   // 🔥 VERY IMPORTANT
+                    batches,
+                    totalStock,
                 };
             })
         );

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Order, OrderDocument } from './schema/order.schema';
 import { OrderStatus } from './order-status.enum';
 import { HttpService } from '@nestjs/axios';
@@ -51,11 +51,23 @@ export class OrderService {
         throw new BadRequestException('Cart is empty');
       }
 
-      const normalize = (arr: string[]) => arr.slice().sort().join('-');
+      // const normalize = (arr: string[]) => arr.slice().sort().join('-');
+      const normalize = (arr?: any) => {
+        if (!arr || !Array.isArray(arr) || arr.length === 0) return 'default';
 
-      const productIds = cartItems.map(i =>
-        typeof i.productId === 'object' ? i.productId._id : i.productId
-      );
+        const clean = arr
+          .map(v => String(v).trim())
+          .filter(v => v !== '' && v.toLowerCase() !== 'default');
+
+        if (clean.length === 0) return 'default';
+
+        return clean.sort().join('-');
+      };
+
+      const productIds = cartItems.map(i => {
+        const id = typeof i.productId === 'object' ? i.productId._id : i.productId;
+        return new Types.ObjectId(id.toString());
+      });
       const bufferDate = new Date();
       bufferDate.setDate(bufferDate.getDate() + 10);
 
@@ -64,7 +76,9 @@ export class OrderService {
         productId: { $in: productIds },
         stock: { $gt: 0 },
         $or: [
+          { expiryDate: { $exists: false } },
           { expiryDate: null },
+          { expiryDate: "" as any },
           { expiryDate: { $gte: bufferDate } }
         ]
       }).lean();
@@ -72,8 +86,8 @@ export class OrderService {
       const batchMap = new Map();
 
       for (const b of batches) {
-        const key = `${b.productId}-${b.variantValues.sort().join('-')}`;
-
+        const bId = b.productId.toString();
+        const key = `${bId}-${normalize(b.variantValues)}`;
         if (!batchMap.has(key)) batchMap.set(key, []);
         batchMap.get(key).push(b);
       }
@@ -82,7 +96,8 @@ export class OrderService {
       for (const item of cartItems) {
         const product = item.productId;
 
-        const variantKey = normalize(item.variant);
+        const variantArr = item.variant || item.variants || [];
+        const variantKey = normalize(variantArr);
 
         const key = `${product._id}-${variantKey}`;
 
@@ -141,6 +156,8 @@ export class OrderService {
       const items = cartItems.map(item => {
         const product = item.productId;
 
+        const variantArr = item.variant || item.variants || [];
+
         const key = `${product._id}-${normalize(item.variant)}`;
         const batchList = batchMap.get(key) || [];
 
@@ -154,15 +171,24 @@ export class OrderService {
           normalize(v.values) === normalize(item.variant)
         );
 
-        const originalPrice = firstBatch?.priceOverride ?? variant?.price ?? 0;
-        const discount = firstBatch?.discountPercentageOverride ?? variant?.discountPercentage ?? 0;
+        const originalPrice =
+          firstBatch?.priceOverride ??
+          variant?.price ??
+          product.price ??
+          0;
+
+        const discount =
+          firstBatch?.discountPercentageOverride ??
+          variant?.discountPercentage ??
+          product.discountPercentage ??
+          0;
 
         const finalPrice = originalPrice - (originalPrice * discount) / 100;
 
         return {
           productId: product._id,
           sellerId: item.sellerId,
-          variantValues: item.variant?.length ? item.variant : ['default'],
+          variantValues: variantArr.length ? variantArr : ['default'],
           title: product?.title || 'Unknown Product',
           quantity: item.quantity,
           price: finalPrice,
