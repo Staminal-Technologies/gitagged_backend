@@ -36,14 +36,18 @@ export class OrderController {
     return this.orderService.getOrderById(id);
   }
 
-  @UseGuards(AdminJwtGuard)
-  @Patch(':id/status')
-  updateStatus(
-    @Param('id') id: string,
+  @UseGuards(SellerJwtGuard)
+  @Patch('item/:itemId/status')
+  updateItemStatus(
+    @Param('itemId') itemId: string,
     @Body() body: { status: OrderStatus },
     @Req() req,
   ) {
-    return this.orderService.updateOrderStatus(id, body.status, req.headers.authorization);
+    return this.orderService.updateItemStatus(
+      itemId,
+      body.status,
+      req.user.sub
+    );
   }
 
   @UseGuards(SellerJwtGuard)

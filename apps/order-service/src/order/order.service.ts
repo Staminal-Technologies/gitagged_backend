@@ -196,6 +196,7 @@ export class OrderService {
           discount,
           isReturnAllowed: product.isReturnAllowed || false,
           returnValidityDays: product.returnValidityDays || 0,
+          status: OrderStatus.PLACED,
         };
       });
 
@@ -270,13 +271,18 @@ export class OrderService {
 
     // 🟠 SELLER
     if (user.role === 'SELLER') {
-
-      return this.orderModel
+      const orders = await this.orderModel
         .find({ 'items.sellerId': user.sub })
         .populate('userId', 'name email phone address')
         .populate('items.productId', 'title variants')
-        .sort({ createdAt: -1 })
-        .lean();
+        .sort({ createdAt: -1 });
+
+      return orders.map(order => ({
+        ...order.toObject(),
+        items: order.items.filter(
+          i => i.sellerId.toString() === user.sub.toString()
+        ),
+      }));
     }
 
     return [];
@@ -290,42 +296,49 @@ export class OrderService {
       .lean();
   }
 
-  async updateOrderStatus(id: string, status: OrderStatus, token: String) {
-    const order = await this.orderModel.findById(id);
+  async updateItemStatus(itemId: string, status: OrderStatus, sellerId: string) {
 
-    if (!order) {
-      throw new BadRequestException('Order not found');
+    const order = await this.orderModel.findOne({
+      'items._id': itemId
+    });
+
+    if (!order) throw new BadRequestException('Order not found');
+
+    const item = order.items.find(i => i._id.toString() === itemId);
+
+    if (!item) throw new BadRequestException('Item not found');
+
+    // 🔥 SECURITY CHECK
+    if (item.sellerId.toString() !== sellerId.toString()) {
+      throw new BadRequestException('Unauthorized');
     }
 
-    if (order.status === status) {
-      return order;
-    }
+    item.status = status;
 
-    if (
-      order.status !== OrderStatus.CANCELLED &&
-      status === OrderStatus.CANCELLED
-    ) {
-      for (const item of order.items) {
+    // 🔥 IMPORTANT → UPDATE ORDER STATUS ALSO
+    order.status = this.calculateOrderStatus(order.items);
 
-        await this.productBatchModel.updateMany(
-          {
-            productId: item.productId,
-            variantValues: item.variantValues
-          },
-          { $inc: { stock: item.quantity } },
-          // {
-          //   headers: {
-          //     Authorization: `Bearer ${token}`,
-          //   },
-          // },
-        );
-      }
-    }
-
-    order.status = status;
     await order.save();
 
-    return order;
+    return { message: 'Item status updated' };
+  }
+
+  private calculateOrderStatus(items: any[]): OrderStatus {
+    const statuses = items.map(i => i.status);
+
+    if (statuses.every(s => s === OrderStatus.DELIVERED)) {
+      return OrderStatus.DELIVERED;
+    }
+
+    if (statuses.every(s => s === OrderStatus.CANCELLED)) {
+      return OrderStatus.CANCELLED;
+    }
+
+    if (statuses.some(s => s === OrderStatus.SHIPPED)) {
+      return OrderStatus.SHIPPED; // or PARTIAL (better later)
+    }
+
+    return OrderStatus.PLACED;
   }
 
   //return service

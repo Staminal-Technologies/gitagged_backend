@@ -24,9 +24,15 @@ export class Order {
       discount: Number,
       isReturnAllowed: { type: Boolean, default: false },
       returnValidityDays: { type: Number, default: 0 },
+      status: {
+        type: String,
+        enum: OrderStatus,
+        default: OrderStatus.PLACED,
+      }
     },
   ])
   items: {
+    _id: Types.ObjectId;
     productId: Types.ObjectId;
     sellerId: Types.ObjectId;
     variantValues: string[];
@@ -36,6 +42,7 @@ export class Order {
     discount: number;
     isReturnAllowed: boolean;
     returnValidityDays: number;
+    status: string;
   }[];
 
   @Prop({ required: true })

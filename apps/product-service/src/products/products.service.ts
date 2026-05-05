@@ -8,7 +8,7 @@ import cloudinary from '../common/cloudinary/cloudinary.config';
 import { MailService } from '../common/mail/mail.service';
 import { ProductApproveStatus } from '../enum/product-approve-status.enum';
 import { ProductBatch, ProductBatchDocument } from './schema/product-batch.schema';
-import { UserDocument, User } from '../users/schema/users.schema';
+import { Seller, SellerDocument } from '../schema/seller.schema';
 
 @Injectable()
 export class ProductsService {
@@ -18,8 +18,8 @@ export class ProductsService {
         private mailService: MailService,
         @InjectModel(ProductBatch.name)
         private productBatchModel: Model<ProductBatchDocument>,
-        @InjectModel(User.name)
-        private userModel: Model<UserDocument>,
+        @InjectModel(Seller.name)
+        private sellerModel: Model<SellerDocument>,
     ) { }
 
     async findAll(user: any) {
@@ -422,7 +422,7 @@ export class ProductsService {
         await product.save();
 
         //  SEND EMAIL
-        const seller = await this.userModel.findById(product.sellerId);
+        const seller = await this.sellerModel.findById(product.sellerId);
 
         await this.mailService.sendEmail(
             seller.email,

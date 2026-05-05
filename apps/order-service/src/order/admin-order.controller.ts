@@ -21,12 +21,4 @@ export class AdminOrdersController {
     return this.orderService.getAllOrders(req.user);
   }
 
-  @Patch(':id/status')
-  updateStatus(
-    @Param('id') id: string,
-    @Body() body: { status: OrderStatus },
-    token : string
-  ) {
-    return this.orderService.updateOrderStatus(id, body.status,token);
-  }
 }

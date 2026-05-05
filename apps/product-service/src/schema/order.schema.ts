@@ -16,7 +16,7 @@ export class Order {
     {
       productId: { type: Types.ObjectId, ref: 'Product' },
       sellerId: { type: Types.ObjectId, ref: 'Seller' },
-      variant: { type: [String], default: [] },
+      variantValues: { type: [String], default: [] },
       title: String,
       quantity: Number,
       price: Number,
@@ -24,19 +24,26 @@ export class Order {
       discount: Number,
       isReturnAllowed: { type: Boolean, default: false },
       returnValidityDays: { type: Number, default: 0 },
+      status: {
+        type: String,
+        enum: OrderStatus,
+        default: OrderStatus.PLACED,
+      }
     },
   ])
   items: {
+    _id: Types.ObjectId;
     productId: Types.ObjectId;
     sellerId: Types.ObjectId;
-    variant: string[];
+    variantValues: string[];
     quantity: number;
     price: number;
     originalPrice: number;
     discount: number;
     isReturnAllowed: boolean;
     returnValidityDays: number;
-  }[];
+    status: string;
+  }[]
 
   @Prop({ required: true })
   totalAmount: number;
