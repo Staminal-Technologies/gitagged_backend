@@ -7,28 +7,28 @@ import { AdminJwtGuard } from '../common/guards/admin-jwt.guards';
 export class SellerController {
   constructor(private readonly sellerService: SellerService) { }
 
-  // 🟢 USER APPLY
+  // USER APPLY
   @UseGuards(UserJwtGuard)
   @Post('apply')
   applySeller(@Req() req, @Body() body: any) {
     return this.sellerService.applySeller(req.user.sub, body);
   }
 
-  // 🟢 USER VIEW OWN SELLER PROFILE
+  // USER VIEW OWN SELLER PROFILE
   @UseGuards(UserJwtGuard)
   @Get('me')
   getMySeller(@Req() req) {
     return this.sellerService.getMySellerProfile(req.user.sub);
   }
 
-  // 🟢 ADMIN VIEW ALL SELLERS
+  // ADMIN VIEW ALL SELLERS
   @UseGuards(AdminJwtGuard)
   @Get()
   getAll() {
     return this.sellerService.getAllSellers();
   }
 
-  // 🟢 ADMIN APPROVE
+  // ADMIN APPROVE
   @UseGuards(AdminJwtGuard)
   @Patch(':id/approve')
   approve(@Param('id') id: string) {
@@ -36,12 +36,11 @@ export class SellerController {
     return this.sellerService.updateSellerStatus(id, 'APPROVED');
   }
 
-  // 🔴 ADMIN REJECT
+  // ADMIN REJECT
   @UseGuards(AdminJwtGuard)
   @Patch(':id/reject')
-  reject(@Param('id') id: string) {
-    // return this.sellerService.rejectSeller(id);
-    return this.sellerService.updateSellerStatus(id, 'REJECTED');
+  reject(@Param('id') id: string, @Body() body:{ reason: string}) {
+    return this.sellerService.updateSellerStatus(id, 'REJECTED', body.reason);
   }
 
   @UseGuards(AdminJwtGuard)

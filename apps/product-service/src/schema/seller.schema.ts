@@ -68,6 +68,12 @@ export class Seller {
 
   @Prop({ default: false })
   isProfileUpdatePending: boolean;
+
+  @Prop({ default: null })
+  profileUpdateStatus: string;
+
+  @Prop({ default: null })
+  rejectionReason: string;
 }
 
 export const SellerSchema = SchemaFactory.createForClass(Seller);

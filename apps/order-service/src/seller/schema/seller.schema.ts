@@ -7,7 +7,7 @@ export type SellerDocument = Seller & Document;
 
 @Schema({ timestamps: true })
 export class Seller {
-  
+
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   userId: Types.ObjectId;
 
@@ -67,6 +67,13 @@ export class Seller {
 
   @Prop({ default: false })
   isProfileUpdatePending: boolean;
+
+  @Prop({ default: null })
+  profileUpdateStatus: string;
+
+  @Prop({ default: null })
+  rejectionReason: string;
+
 }
 
 export const SellerSchema = SchemaFactory.createForClass(Seller);

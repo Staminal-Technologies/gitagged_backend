@@ -47,13 +47,6 @@ export class ProductsService {
 
             const ids = validProductIds.map(p => p._id);
 
-            // return this.productModel.find({
-            //     _id: { $in: ids },
-            //     status: 'active',
-            //     approveStatus: ProductApproveStatus.APPROVED
-            // }).populate('categories', 'name').
-            //     populate('giRegions', 'name')
-            //     .lean();
             const products = await this.productModel.find({
                 _id: { $in: ids },
                 status: 'active',

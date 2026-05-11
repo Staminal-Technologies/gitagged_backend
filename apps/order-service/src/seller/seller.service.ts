@@ -13,7 +13,7 @@ export class SellerService {
   constructor(
     @InjectModel(Seller.name) private sellerModel: Model<SellerDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    private mailService:MailService,
+    private mailService: MailService,
   ) { }
 
   // 🟢 USER APPLY TO BECOME SELLER
@@ -60,21 +60,38 @@ export class SellerService {
   }
 
   // update seller status
-  async updateSellerStatus(sellerId: string, status: string) {
+  async updateSellerStatus(sellerId: string, status: string, reason?: string) {
+    if (
+      status === 'REJECTED' &&
+      (!reason || reason.trim() === '')
+    ) {
+      throw new BadRequestException(
+        'Rejection reason required'
+      );
+    }
+
     const seller = await this.sellerModel.findById(sellerId);
 
     if (!seller) throw new NotFoundException('Seller not found');
 
     seller.status = status as approvalStatus;
+    seller.profileUpdateStatus = status;
+
+    seller.rejectionReason =
+      status === 'REJECTED'
+        ? reason
+        : null;
+
     seller.isActive = status === 'APPROVED';
 
-    await seller.save();
-
     if (status === 'APPROVED') {
+      seller.rejectionReason = null;
       await this.userModel.findByIdAndUpdate(seller.userId, {
         role: UserStatus.SELLER,
       });
     }
+
+    await seller.save();
 
     return { message: 'Status updated successfully' };
   }
