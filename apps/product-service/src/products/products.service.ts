@@ -47,13 +47,56 @@ export class ProductsService {
 
             const ids = validProductIds.map(p => p._id);
 
-            return this.productModel.find({
+            // return this.productModel.find({
+            //     _id: { $in: ids },
+            //     status: 'active',
+            //     approveStatus: ProductApproveStatus.APPROVED
+            // }).populate('categories', 'name').
+            //     populate('giRegions', 'name')
+            //     .lean();
+            const products = await this.productModel.find({
                 _id: { $in: ids },
                 status: 'active',
                 approveStatus: ProductApproveStatus.APPROVED
-            }).populate('categories', 'name').
-                populate('giRegions', 'name')
+            })
+                .populate('categories', 'name')
+                .populate('giRegions', 'name')
                 .lean();
+
+            const result = await Promise.all(
+                products.map(async (p) => {
+
+                    const batches = await this.productBatchModel.find({
+                        productId: p._id,
+                        stock: { $gt: 0 },
+                        $or: [
+                            { expiryDate: null },
+                            { expiryDate: { $gte: futureDate } }
+                        ]
+                    }).sort({ stock: -1 });
+
+                    const firstAvailableBatch = batches[0] || null;
+
+                    const totalStock = batches.reduce(
+                        (sum, b) => sum + b.stock,
+                        0
+                    );
+
+                    return {
+                        ...p,
+
+                        totalStock,
+
+                        firstAvailableVariant:
+                            firstAvailableBatch?.variantValues || null,
+
+                        isOutOfStock:
+                            totalStock <= 0,
+                    };
+                })
+            );
+
+            return result;
         }
 
         if (user.role === 'ADMIN') {
@@ -115,11 +158,73 @@ export class ProductsService {
     }
 
     async findByCategory(categoryId: string) {
-        return this.productModel.find({ categories: categoryId, status: 'active', approveStatus: ProductApproveStatus.APPROVED }).lean();
+
+        const now = new Date();
+
+        const validProductIds =
+            await this.productBatchModel.aggregate([
+                {
+                    $match: {
+                        stock: { $gt: 0 },
+                        $or: [
+                            { expiryDate: null },
+                            { expiryDate: { $gte: now } }
+                        ]
+                    }
+                },
+                {
+                    $group: {
+                        _id: "$productId"
+                    }
+                }
+            ]);
+
+        const ids = validProductIds.map(p => p._id);
+
+        return this.productModel.find({
+            _id: { $in: ids },
+            categories: categoryId,
+            status: 'active',
+            approveStatus: ProductApproveStatus.APPROVED
+        })
+            .populate('categories', 'name')
+            .populate('giRegions', 'name')
+            .lean();
     }
 
     async findByGIRegion(regionId: string) {
-        return this.productModel.find({ giRegions: regionId, status: 'active', approveStatus: ProductApproveStatus.APPROVED }).lean();
+
+        const now = new Date();
+
+        const validProductIds =
+            await this.productBatchModel.aggregate([
+                {
+                    $match: {
+                        stock: { $gt: 0 },
+                        $or: [
+                            { expiryDate: null },
+                            { expiryDate: { $gte: now } }
+                        ]
+                    }
+                },
+                {
+                    $group: {
+                        _id: "$productId"
+                    }
+                }
+            ]);
+
+        const ids = validProductIds.map(p => p._id);
+
+        return this.productModel.find({
+            _id: { $in: ids },
+            giRegions: regionId,
+            status: 'active',
+            approveStatus: ProductApproveStatus.APPROVED
+        })
+            .populate('categories', 'name')
+            .populate('giRegions', 'name')
+            .lean();
     }
 
     async create(data: any, user: any) {
@@ -238,12 +343,13 @@ export class ProductsService {
                 throw new BadRequestException('You cannot change the product while approval is pending');
             }
 
-            if (product.isUpdatePending) {
+            if (product.isUpdatePending && product.updateRequestStatus === 'PENDING') {
                 throw new BadRequestException('You cannot change the product, update request is already pending');
             }
 
             product.pendingUpdates = data;
             product.isUpdatePending = true;
+            product.updateRequestStatus = 'PENDING';
 
             await product.save();
 
@@ -325,6 +431,7 @@ export class ProductsService {
         return this.productModel.find({
             categories: { $in: categoryIds },
             status: 'active',
+            approveStatus: ProductApproveStatus.APPROVED,
         }).lean();
     }
 
@@ -399,6 +506,7 @@ export class ProductsService {
 
         product.approveStatus = ProductApproveStatus.APPROVED;
         product.status = 'active';
+        product.rejectionReason = null;
 
         await product.save();
 
@@ -460,7 +568,8 @@ export class ProductsService {
         product.pendingUpdates = null;
         product.isUpdatePending = false;
         product.status = 'active';
-        product.approveStatus = ProductApproveStatus.APPROVED;
+        product.rejectionReason = null;
+        product.updateRequestStatus = null;
         await product.save();
 
         return { message: 'Product update approved' };
@@ -469,9 +578,16 @@ export class ProductsService {
     async rejectProductUpdate(productId: string, reason: string) {
         const product = await this.productModel.findById(productId);
 
-        product.pendingUpdates = null;
-        product.isUpdatePending = false;
+        if (!reason || reason.trim() === '') {
+            throw new BadRequestException(
+                'Rejection reason required'
+            );
+        }
+
+        // product.pendingUpdates = null;
+        product.isUpdatePending = true;
         product.rejectionReason = reason;
+        product.updateRequestStatus = 'REJECTED';
 
         await product.save();
 

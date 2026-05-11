@@ -82,6 +82,9 @@ export class Product {
   @Prop({ default: 'PENDING' })
   approveStatus: string;
 
+  @Prop({ default: null })
+  updateRequestStatus: string;
+
   @Prop({ type: Object, default: null })
   pendingUpdates: any;
 

@@ -8,57 +8,67 @@ export class NotifyService {
         private readonly notificationModel: any,
         private readonly productModel: any,
         private readonly mailService: MailService,
+        private readonly productBatchModel: any,
     ) { }
 
-    async updateStock(productId: string, newStock: number) {
-        const oldProduct = await this.productModel.findById(productId);
+    async updateStock(batchId: string, newStock: number) {
+        const batch = await this.productBatchModel.findById(batchId);
 
-        if (!oldProduct) throw new Error('Product not found');
+        if (!batch) throw new Error('Batch not found');
 
-        const product = await this.productModel.findByIdAndUpdate(
-            productId,
-            { stock: newStock },
-            { new: true }
-        );
+        const oldStock = batch.stock;
+        batch.stock = newStock;
 
-        // ✅ ONLY when stock goes 0 → >0
-        if (oldProduct.stock === 0 && newStock > 0) {
-            await this.notifyUsers(productId, product.title);
+        await batch.save();
+
+        // only when stock returns
+        if (oldStock === 0 && newStock > 0) {
+
+            const product = await this.productModel.findById(
+                batch.productId
+            );
+
+            await this.notifyUsers(
+                batch.productId.toString(),
+                batch.variantValues || [],
+                product.title,
+            );
         }
 
-        return product;
+        return batch;
     }
 
-    async notifyUsers(productId: string, title: string) {
+    async notifyUsers(productId: string, variantValues: string[], title: string) {
         const requests = await this.stockNotifyModel.find({
             productId,
+            variantValues,
             isNotified: false,
         }).populate('userId');
 
         await Promise.all(
             requests.map(async (req) => {
-                try{
-                const user = req.userId as any;
+                try {
+                    const user = req.userId as any;
 
-                await this.notificationModel.create({
-                    userId: user._id,
-                    title: 'Back in Stock!',
-                    message: `${title} is now available`,
-                });
+                    await this.notificationModel.create({
+                        userId: user._id,
+                        title: 'Back in Stock!',
+                        message: `${title} is now available`,
+                    });
 
-                if (user.email) {
-                    await this.mailService.sendEmail(
-                        user.email,
-                        'Product Back in Stock!',
-                        `${title} is available now. Hurry!`
-                    );
+                    if (user.email) {
+                        await this.mailService.sendEmail(
+                            user.email,
+                            'Product Back in Stock!',
+                            `${title} is available now. Hurry!`
+                        );
+                    }
+
+                    req.isNotified = true;
+                    await req.save();
+                } catch (error) {
+                    console.error(`Failed to notify user ${req.userId} for product ${productId}:`, error);
                 }
-
-                req.isNotified = true;
-                await req.save();
-            } catch(error){
-                console.error(`Failed to notify user ${req.userId} for product ${productId}:`, error);
-            }
             })
         );
     }
