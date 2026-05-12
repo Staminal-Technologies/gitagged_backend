@@ -10,6 +10,7 @@ import { PassportModule } from '@nestjs/passport';
 import { MailModule } from '../common/mail/mail.module';
 import { ProductBatch, ProductBatchSchema } from './schema/product-batch.schema';
 import { User, UserSchema } from '../users/schema/users.schema';
+import { Cart, CartSchema } from '../cart/schema/cart.schema';
 
 @Module({
     imports: [
@@ -20,6 +21,7 @@ import { User, UserSchema } from '../users/schema/users.schema';
             { name: Seller.name, schema: SellerSchema },
             { name: ProductBatch.name, schema: ProductBatchSchema },
             { name: User.name, schema: UserSchema },
+            { name: Cart.name, schema: CartSchema},
         ]),
         MailModule,
     ],
