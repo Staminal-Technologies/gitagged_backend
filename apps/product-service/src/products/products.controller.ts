@@ -134,4 +134,16 @@ export class ProductsController {
     return this.service.rejectProductUpdate(id, body.reason);
   }
 
+  @UseGuards(AuthGuard('user-jwt'))
+  @Delete('/remove-selected')
+  removeSelected(
+    @Req() req,
+    @Body() body: { keys: string[] }
+  ) {
+    return this.service.removeSelectedItems(
+      req.user.sub,
+      body.keys
+    );
+  }
+
 }

@@ -9,6 +9,7 @@ import { MailService } from '../common/mail/mail.service';
 import { ProductApproveStatus } from '../enum/product-approve-status.enum';
 import { ProductBatch, ProductBatchDocument } from './schema/product-batch.schema';
 import { Seller, SellerDocument } from '../schema/seller.schema';
+import { Cart, CartDocument } from '../cart/schema/cart.schema';
 
 @Injectable()
 export class ProductsService {
@@ -20,6 +21,8 @@ export class ProductsService {
         private productBatchModel: Model<ProductBatchDocument>,
         @InjectModel(Seller.name)
         private sellerModel: Model<SellerDocument>,
+        @InjectModel(Cart.name)
+        private cartModel: Model<CartDocument>
     ) { }
 
     async findAll(user: any) {
@@ -61,7 +64,6 @@ export class ProductsService {
 
                     const batches = await this.productBatchModel.find({
                         productId: p._id,
-                        stock: { $gt: 0 },
                         $or: [
                             { expiryDate: null },
                             { expiryDate: { $gte: futureDate } }
@@ -77,7 +79,6 @@ export class ProductsService {
 
                     return {
                         ...p,
-
                         totalStock,
 
                         firstAvailableVariant:
@@ -102,7 +103,6 @@ export class ProductsService {
                 products.map(async (p) => {
                     const batches = await this.productBatchModel.find({
                         productId: p._id,
-                        stock: { $gt: 0 }
                     });
 
                     const totalStock = batches.reduce((sum, b) => sum + b.stock, 0);
@@ -126,7 +126,6 @@ export class ProductsService {
             products.map(async (p) => {
                 const batches = await this.productBatchModel.find({
                     productId: p._id,
-                    stock: { $gt: 0 }
                 });
 
                 const totalStock = batches.reduce((sum, b) => sum + b.stock, 0);
@@ -477,13 +476,13 @@ export class ProductsService {
             products.map(async (p) => {
                 const batches = await this.productBatchModel.find({
                     productId: p._id,
-                    stock: { $gt: 0 }
                 });
 
                 const totalStock = batches.reduce((sum, b) => sum + b.stock, 0);
 
                 return {
                     ...p,
+                    batches,
                     totalStock
                 };
             })
@@ -628,6 +627,32 @@ export class ProductsService {
                 { expiryDate: { $gte: new Date() } }
             ]
         }).lean();
+    }
+
+    async removeSelectedItems(
+        userId: string,
+        keys: string[]
+    ) {
+
+        const cart = await this.cartModel.findOne({ userId });
+
+        if (!cart) return;
+
+        cart.items = cart.items.filter(item => {
+
+            const key =
+                item.variant?.length
+                    ? `${item.productId}|${item.variant.join('|')}`
+                    : item.productId.toString();
+
+            return !keys.includes(key);
+        });
+
+        await cart.save();
+
+        return {
+            message: 'Selected items removed'
+        };
     }
 
 }
