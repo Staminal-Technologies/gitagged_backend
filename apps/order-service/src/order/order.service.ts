@@ -4,7 +4,6 @@ import { Model, Types } from 'mongoose';
 import { Order, OrderDocument } from './schema/order.schema';
 import { OrderStatus } from './order-status.enum';
 import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
 import { ProductBatch, ProductBatchDocument } from 'apps/product-service/src/products/schema/product-batch.schema';
 
 @Injectable()
@@ -16,6 +15,8 @@ export class OrderService {
     @InjectModel('User')
     private userModel: Model<any>,
     private httpService: HttpService,
+    @InjectModel('Cart')
+    private cartModel: Model<any>,
     @InjectModel(ProductBatch.name)
     private productBatchModel: Model<ProductBatchDocument>,
   ) { }
@@ -31,27 +32,16 @@ export class OrderService {
       lat?: number;
       lng?: number;
     },
-    saveAddress: boolean
+    saveAddress: boolean,
+    items: any[]
   }) {
     try {
-      const cartRes = await firstValueFrom(
-        this.httpService.get('http://localhost:3002/cart', {
-          headers: {
-            Authorization: token.startsWith('Bearer ')
-              ? token
-              : `Bearer ${token}`,
-          },
-        }),
-      );
-      const cart = cartRes.data;
-
-      const cartItems = cart?.items || [];
+      const cartItems = checkoutData?.items || [];
 
       if (!cartItems.length) {
         throw new BadRequestException('Cart is empty');
       }
 
-      // const normalize = (arr: string[]) => arr.slice().sort().join('-');
       const normalize = (arr?: any) => {
         if (!arr || !Array.isArray(arr) || arr.length === 0) return 'default';
 
@@ -114,7 +104,9 @@ export class OrderService {
       for (const item of cartItems) {
         const product = item.productId;
 
-        const key = `${product._id}-${normalize(item.variant)}`;
+        const variantArr =
+          item.variant || item.variants || [];
+        const key = `${product._id}-${normalize(variantArr)}`;
 
         const batchList = (batchMap.get(key) || [])
           .sort((a, b) => {
@@ -158,7 +150,7 @@ export class OrderService {
 
         const variantArr = item.variant || item.variants || [];
 
-        const key = `${product._id}-${normalize(item.variant)}`;
+        const key = `${product._id}-${normalize(variantArr)}`;
         const batchList = batchMap.get(key) || [];
 
         const firstBatch = batchList.sort((a, b) => {
@@ -214,6 +206,26 @@ export class OrderService {
         receiverAddress: checkoutData.receiverAddress,
       });
 
+      for (const item of cartItems) {
+
+        const productId =
+          typeof item.productId === 'object'
+            ? item.productId._id
+            : item.productId;
+
+        await this.cartModel.updateOne(
+          { userId: new Types.ObjectId(userId) },
+          {
+            $pull: {
+              items: {
+                productId: new Types.ObjectId(productId),
+                variant: item.variant || item.variants || []
+              }
+            }
+          }
+        );
+      }
+
       // save address to the user data..
       if (checkoutData.saveAddress) {
         await this.userModel.findByIdAndUpdate(
@@ -232,16 +244,6 @@ export class OrderService {
           },
         );
       }
-
-      await firstValueFrom(
-        this.httpService.delete('http://localhost:3002/cart/clear/all', {
-          headers: {
-            Authorization: token.startsWith('Bearer ')
-              ? token
-              : `Bearer ${token}`,
-          },
-        }),
-      );
 
       return order;
 
