@@ -6,6 +6,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
 import cloudinary, { configureCloudinary } from '../common/cloudinary/cloudinary.config'
 import { SellerJwtGuard } from '../common/guards/seller-jwt.guard';
+import { AdminJwtGuard } from '../common/guards/admin-jwt.guard';
 
 @Controller('products')
 export class ProductsController {
@@ -22,6 +23,7 @@ export class ProductsController {
     return this.service.findByParentCategory(parentId);
   }
 
+  @UseGuards(AdminJwtGuard)
   @Get('pending')
   getPendingProducts() {
     return this.service.getPendingProducts();
@@ -114,35 +116,60 @@ export class ProductsController {
     return this.service.getSellerProducts(req.user.sub.toString());
   }
 
+  @UseGuards(AdminJwtGuard)
   @Patch(':id/approve')
   approveProduct(@Param('id') id: string) {
     return this.service.approveProduct(id);
   }
 
+  @UseGuards(AdminJwtGuard)
   @Patch(':id/reject')
   rejectProduct(@Param('id') id: string, @Body() body: { reason: string }) {
     return this.service.rejectProduct(id, body.reason);
   }
 
+  @UseGuards(AdminJwtGuard)
   @Patch(':id/approve-update')
   approveUpdate(@Param('id') id: string) {
     return this.service.approveProductUpdate(id);
   }
 
+  @UseGuards(AdminJwtGuard)
   @Patch(':id/reject-update')
   rejectUpdate(@Param('id') id: string, @Body() body: { reason: string }) {
     return this.service.rejectProductUpdate(id, body.reason);
   }
 
-  @UseGuards(AuthGuard('user-jwt'))
-  @Delete('/remove-selected')
-  removeSelected(
+  // @UseGuards(AuthGuard('user-jwt'))
+  // @Delete('/remove-selected')
+  // removeSelected(
+  //   @Req() req,
+  //   @Body() body: { keys: string[] }
+  // ) {
+  //   return this.service.removeSelectedItems(
+  //     req.user.sub,
+  //     body.keys
+  //   );
+  // }
+
+  @UseGuards(SellerJwtGuard)
+  @Post(':id/add-stock')
+  addStock(
+    @Param('id') id: string,
+    @Body()
+    body: {
+      variantValues: string[];
+      stock: number;
+      expiryDate?: Date;
+      priceOverride?: number;
+      discountPercentageOverride?: number;
+    },
     @Req() req,
-    @Body() body: { keys: string[] }
   ) {
-    return this.service.removeSelectedItems(
+    return this.service.addStock(
+      id,
+      body,
       req.user.sub,
-      body.keys
     );
   }
 

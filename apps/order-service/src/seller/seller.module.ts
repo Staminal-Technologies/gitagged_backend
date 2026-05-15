@@ -6,9 +6,11 @@ import { SellerController } from './seller.controller';
 import { SellerService } from './seller.service';
 import { SellerJwtStrategy } from '../seller-auth/seller-jwt.strategy';
 import { MailModule } from '../common/mail/mail.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule,
     MongooseModule.forFeature([
       { name: Seller.name, schema: SellerSchema },
       { name: User.name, schema: UserSchema },
@@ -18,4 +20,4 @@ import { MailModule } from '../common/mail/mail.module';
   controllers: [SellerController],
   providers: [SellerService, SellerJwtStrategy],
 })
-export class SellerModule {}
+export class SellerModule { }

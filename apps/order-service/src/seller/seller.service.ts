@@ -95,4 +95,112 @@ export class SellerService {
 
     return { message: 'Status updated successfully' };
   }
+
+  async updateSellerProfile(userId: string, data: any) {
+
+    const seller = await this.sellerModel.findOne({ userId });
+
+    if (!seller) {
+      throw new NotFoundException('Seller not found');
+    }
+
+    // DIRECT UPDATE FIELDS
+
+    seller.mobileNumber =
+      data.mobileNumber || seller.mobileNumber;
+
+    seller.address =
+      data.address || seller.address;
+
+    seller.productDescription =
+      data.productDescription ||
+      seller.productDescription;
+
+    // ADMIN APPROVAL REQUIRED FIELDS
+
+    seller.pendingProfileUpdates = {
+
+      businessName: data.businessName,
+      gstNumber: data.gstNumber,
+      panNumber: data.panNumber,
+      bankAccountNumber: data.bankAccountNumber,
+      ifscCode: data.ifscCode,
+      accountHolderName: data.accountHolderName,
+      digitalSignatureUrl: data.digitalSignatureUrl,
+
+    };
+
+    seller.isProfileUpdatePending = true;
+
+    seller.profileUpdateStatus = 'PENDING';
+
+    await seller.save();
+
+    return {
+      message:
+        'Profile update submitted for admin approval',
+    };
+  }
+
+  async approveProfileUpdate(sellerId: string) {
+
+    const seller = await this.sellerModel.findById(sellerId);
+
+    if (!seller) {
+      throw new NotFoundException('Seller not found');
+    }
+
+    if (!seller.pendingProfileUpdates) {
+      throw new BadRequestException(
+        'No pending profile updates'
+      );
+    }
+
+    Object.assign(
+      seller,
+      seller.pendingProfileUpdates
+    );
+
+    seller.pendingProfileUpdates = null;
+
+    seller.isProfileUpdatePending = false;
+
+    seller.profileUpdateStatus = 'APPROVED';
+
+    seller.rejectionReason = null;
+
+    await seller.save();
+
+    return {
+      message:
+        'Profile updates approved successfully',
+    };
+  }
+
+  async rejectProfileUpdate(
+    sellerId: string,
+    reason: string
+  ) {
+
+    const seller = await this.sellerModel.findById(sellerId);
+
+    if (!seller) {
+      throw new NotFoundException('Seller not found');
+    }
+
+    seller.profileUpdateStatus = 'REJECTED';
+
+    seller.rejectionReason = reason;
+
+    seller.isProfileUpdatePending = false;
+
+    seller.pendingProfileUpdates = null;
+
+    await seller.save();
+
+    return {
+      message:
+        'Profile update rejected',
+    };
+  }
 }

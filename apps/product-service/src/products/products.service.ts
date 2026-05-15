@@ -146,7 +146,27 @@ export class ProductsService {
         if (!product || product.status !== 'active' || product.approveStatus !== 'APPROVED') {
             throw new NotFoundException('Product not available');
         }
-        return product;
+
+        const batches =
+            await this.productBatchModel.find({
+                productId: id,
+                stock: { $gt: 0 },
+                $or: [
+                    { expiryDate: null },
+                    { expiryDate: { $gte: new Date() } }
+                ]
+            });
+
+        if (batches.length === 0) {
+            throw new NotFoundException(
+                'Product unavailable'
+            );
+        }
+        return {
+            ...product,
+            batches
+        }
+
     }
 
     async findByCategory(categoryId: string) {
@@ -289,13 +309,38 @@ export class ProductsService {
         for (const batch of data.initialBatches) {
             const key = batch.variantValues.sort().join('-');
 
+            if (batch.stock < 0) {
+                throw new BadRequestException(
+                    'Invalid stock'
+                );
+            }
+
             if (!validVariants.includes(key)) {
                 throw new BadRequestException('Invalid variant in batch');
             }
         }
 
+        const unique = new Set();
+
+        for (const v of data.variants) {
+
+            const key =
+                v.values.sort().join('-');
+
+            if (unique.has(key)) {
+                throw new BadRequestException(
+                    'Duplicate variants'
+                );
+            }
+
+            unique.add(key);
+        }
+
+        const slug = await this.generateUniqueSlug(data.title);
+
         const product = await this.productModel.create({
             ...data,
+            slug,
             sellerId: user.sub,
             approveStatus: ProductApproveStatus.PENDING,
         });
@@ -376,18 +421,6 @@ export class ProductsService {
         );
     }
 
-    async createSlug(data: any) {
-        const slug = slugify(data.title, {
-            lower: true,
-            strict: true,
-        });
-
-        return this.productModel.create({
-            ...data,
-            slug,
-        });
-    }
-
     async remove(id: string, user: any) {
 
         const product = await this.productModel.findById(id);
@@ -429,11 +462,12 @@ export class ProductsService {
 
     async reduceStock(productId: string, variantValues: string[], qty: number) {
         variantValues = variantValues.sort();
-        const batch = await this.productBatchModel
-            .findOne({
+        let remaining = qty;
+        const batches = await this.productBatchModel
+            .find({
                 productId,
                 variantValues,
-                stock: { $gte: qty },
+                stock: { $gt: 0 },
                 $or: [
                     { expiryDate: null },
                     { expiryDate: { $gte: new Date() } }
@@ -441,14 +475,53 @@ export class ProductsService {
             })
             .sort({ expiryDate: 1 });
 
-        if (!batch) {
-            throw new BadRequestException('Insufficient stock or variant not found');
+        if (!batches.length) {
+            throw new BadRequestException('Variant Stock unavailable');
         }
 
-        batch.stock -= qty;
-        await batch.save();
+        for (const batch of batches) {
 
-        return batch;
+            if (remaining <= 0) break;
+
+            const deduct = Math.min(
+                batch.stock,
+                remaining
+            );
+
+            const updated =
+                await this.productBatchModel.findOneAndUpdate(
+                    {
+                        _id: batch._id,
+                        stock: { $gte: deduct },
+                    },
+                    {
+                        $inc: {
+                            stock: -deduct
+                        }
+                    },
+                    {
+                        new: true
+                    }
+                );
+
+            if (!updated) {
+                throw new BadRequestException(
+                    'Stock changed. Try again.'
+                );
+            }
+
+            remaining -= deduct;
+        }
+
+        if (remaining > 0) {
+            throw new BadRequestException(
+                'Insufficient stock'
+            );
+        }
+
+        return {
+            message: 'Stock reduced successfully'
+        };
     }
 
     async restoreStock(productId: string, variantValues: string[], qty: number) {
@@ -460,8 +533,15 @@ export class ProductsService {
 
         if (!batch) throw new BadRequestException('Batch not found');
 
-        batch.stock += qty;
-        await batch.save();
+        await this.productBatchModel.findByIdAndUpdate(
+            batch._id,
+            {
+                $inc: {
+                    stock: qty
+                }
+            },
+            { new: true }
+        );
 
         return batch;
     }
@@ -548,7 +628,7 @@ export class ProductsService {
         if (updates.variants) {
             product.variants = updates.variants.map((v: any, i: number) => ({
                 ...v,
-                discountPercentage: updates.discountPercentage ?? 0,
+                discountPercentage: v.discountPercentage ?? 0,
                 images: v.images || [],
             }));
         }
@@ -577,7 +657,7 @@ export class ProductsService {
         }
 
         // product.pendingUpdates = null;
-        product.isUpdatePending = true;
+        product.isUpdatePending = false;
         product.rejectionReason = reason;
         product.updateRequestStatus = 'REJECTED';
 
@@ -629,30 +709,115 @@ export class ProductsService {
         }).lean();
     }
 
-    async removeSelectedItems(
-        userId: string,
-        keys: string[]
+    // async removeSelectedItems(
+    //     userId: string,
+    //     keys: string[]
+    // ) {
+
+    //     const cart = await this.cartModel.findOne({ userId });
+
+    //     if (!cart) return;
+
+    //     cart.items = cart.items.filter(item => {
+
+    //         const key =
+    //             item.variant?.length
+    //                 ? `${item.productId}|${item.variant.join('|')}`
+    //                 : item.productId.toString();
+
+    //         return !keys.includes(key);
+    //     });
+
+    //     await cart.save();
+
+    //     return {
+    //         message: 'Selected items removed'
+    //     };
+    // }
+
+    async addStock(
+        productId: string,
+        data: {
+            variantValues: string[];
+            stock: number;
+            expiryDate?: Date;
+            priceOverride?: number;
+            discountPercentageOverride?: number;
+        },
+        sellerId: string,
     ) {
 
-        const cart = await this.cartModel.findOne({ userId });
+        const product = await this.productModel.findById(productId);
 
-        if (!cart) return;
+        if (!product) {
+            throw new NotFoundException('Product not found');
+        }
 
-        cart.items = cart.items.filter(item => {
+        // SECURITY
+        if (product.sellerId.toString() !== sellerId) {
+            throw new BadRequestException(
+                'You cannot add stock to another seller product'
+            );
+        }
 
-            const key =
-                item.variant?.length
-                    ? `${item.productId}|${item.variant.join('|')}`
-                    : item.productId.toString();
+        const sortedValues =
+            data.variantValues?.length
+                ? [...data.variantValues].sort()
+                : ['default'];
 
-            return !keys.includes(key);
-        });
+        const normalizeKey = (arr: string[]) =>
+            arr.slice().sort().join('-');
 
-        await cart.save();
+        const variantExists = product.variants.some(
+            v =>
+                normalizeKey(v.values) ===
+                normalizeKey(sortedValues)
+        );
+
+        if (!variantExists) {
+            throw new BadRequestException(
+                'Variant not found'
+            );
+        }
+
+        const batch =
+            await this.productBatchModel.create({
+                productId,
+                variantValues: sortedValues,
+                stock: data.stock,
+                expiryDate: data.expiryDate || null,
+                priceOverride: data.priceOverride || null,
+                discountPercentageOverride:
+                    data.discountPercentageOverride || null,
+            });
 
         return {
-            message: 'Selected items removed'
+            message: 'Stock added successfully',
+            batch,
         };
+    }
+
+    async generateUniqueSlug(title: string) {
+
+        const baseSlug = slugify(title, {
+            lower: true,
+            strict: true,
+        });
+
+        let slug = baseSlug;
+
+        let counter = 1;
+
+        while (
+            await this.productModel.findOne({ slug })
+        ) {
+
+            slug = `${baseSlug}-${counter}`;
+
+            counter++;
+        }
+
+        return slug;
     }
 
 }

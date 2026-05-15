@@ -10,14 +10,16 @@ import { User, UserSchema } from '../common/schema/user.schema';
 import { Product, ProductSchema } from '../common/schema/product.schema';
 import { AuthModule } from '../common/auth/auth.module';
 import { ProductBatchSchema, ProductBatch } from 'apps/product-service/src/products/schema/product-batch.schema';
+import { Cart, CartSchema } from 'apps/product-service/src/cart/schema/cart.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Order.name, schema: OrderSchema },
       { name: User.name, schema: UserSchema },
-      {name: Product.name, schema: ProductSchema},
-      { name: ProductBatch.name, schema:ProductBatchSchema}
+      { name: Product.name, schema: ProductSchema },
+      { name: ProductBatch.name, schema: ProductBatchSchema },
+      { name: Cart.name, schema: CartSchema }
     ]),
     AuthModule,
     HttpModule,

@@ -31,9 +31,16 @@ export class OrderController {
     return this.orderService.getAllOrders(req.user);
   }
 
+  @UseGuards(UserJwtGuard)
   @Get(':id')
-  getOrder(@Param('id') id: string) {
-    return this.orderService.getOrderById(id);
+  getOrder(
+    @Param('id') id: string,
+    @Req() req,
+  ) {
+    return this.orderService.getOrderById(
+      id,
+      req.user,
+    );
   }
 
   @UseGuards(SellerJwtGuard)

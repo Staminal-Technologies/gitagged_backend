@@ -2,6 +2,7 @@ import { Controller, Post, Get, Patch, Param, Body, Req, UseGuards } from '@nest
 import { SellerService } from './seller.service';
 import { UserJwtGuard } from '../common/guards/user-jwt.guards';
 import { AdminJwtGuard } from '../common/guards/admin-jwt.guards';
+import { SellerJwtGuard } from '../common/guards/seller-jwt.guards';
 
 @Controller('sellers')
 export class SellerController {
@@ -15,7 +16,7 @@ export class SellerController {
   }
 
   // USER VIEW OWN SELLER PROFILE
-  @UseGuards(UserJwtGuard)
+  @UseGuards(SellerJwtGuard)
   @Get('me')
   getMySeller(@Req() req) {
     return this.sellerService.getMySellerProfile(req.user.sub);
@@ -39,7 +40,7 @@ export class SellerController {
   // ADMIN REJECT
   @UseGuards(AdminJwtGuard)
   @Patch(':id/reject')
-  reject(@Param('id') id: string, @Body() body:{ reason: string}) {
+  reject(@Param('id') id: string, @Body() body: { reason: string }) {
     return this.sellerService.updateSellerStatus(id, 'REJECTED', body.reason);
   }
 
@@ -50,5 +51,37 @@ export class SellerController {
     @Body() body: { status: string }
   ) {
     return this.sellerService.updateSellerStatus(id, body.status);
+  }
+
+  @UseGuards(SellerJwtGuard)
+  @Patch('update-profile')
+  updateProfile(
+    @Req() req,
+    @Body() body: any
+  ) {
+    return this.sellerService.updateSellerProfile(
+      req.user.sub,
+      body
+    );
+  }
+
+  @UseGuards(AdminJwtGuard)
+  @Patch(':id/approve-profile-update')
+  approveProfileUpdate(
+    @Param('id') id: string
+  ) {
+    return this.sellerService.approveProfileUpdate(id);
+  }
+
+  @UseGuards(AdminJwtGuard)
+  @Patch(':id/reject-profile-update')
+  rejectProfileUpdate(
+    @Param('id') id: string,
+    @Body() body: { reason: string }
+  ) {
+    return this.sellerService.rejectProfileUpdate(
+      id,
+      body.reason
+    );
   }
 }

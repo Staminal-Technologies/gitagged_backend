@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Favorite, FavoriteDocument } from './schema/favorites.schema';
 import { ProductBatch, ProductBatchDocument } from '../products/schema/product-batch.schema';
+import { Product, ProductDocument } from '../products/schema/product.schema';
 
 @Injectable()
 export class FavoritesService {
@@ -11,12 +12,52 @@ export class FavoritesService {
         private favoriteModel: Model<FavoriteDocument>,
         @InjectModel(ProductBatch.name)
         private productBatchModel: Model<ProductBatchDocument>,
+        @InjectModel(Product.name)
+        private productModel: Model<ProductDocument>
     ) { }
 
     async add(userId: string, productId: string, variants: string[] = []) {
-        const normalize = (arr: string[]) => arr.slice().sort();
-        const normalizeVariants = normalize(variants.length ? variants : ['default']);
 
+        const product =
+            await this.productModel.findById(productId);
+
+        if (!product) {
+            throw new NotFoundException(
+                'Product not found'
+            );
+        }
+        if (
+            product.approveStatus !== 'APPROVED' ||
+            product.status !== 'active'
+        ) {
+            throw new NotFoundException(
+                'Product unavailable'
+            );
+        }
+
+        const normalize = (arr: string[]) => arr.slice().sort();
+        const normalizeVariants =
+            normalize(
+                variants.length
+                    ? variants
+                    : ['default']
+            );
+
+        const normalizeKey = (arr: string[]) =>
+            arr.slice().sort().join('-');
+
+        const variantExists =
+            product.variants.some(
+                v =>
+                    normalizeKey(v.values) ===
+                    normalizeKey(normalizeVariants)
+            );
+
+        if (!variantExists) {
+            throw new NotFoundException(
+                'Variant not found'
+            );
+        }
         const exists = await this.favoriteModel.findOne({
             userId: new Types.ObjectId(userId),
             productId: new Types.ObjectId(productId),
@@ -46,17 +87,20 @@ export class FavoritesService {
         bufferDate.setDate(now.getDate() + 10);
 
         const items = [];
-
         const normalizeKey = (arr: string[]) => arr.slice().sort().join('-');
         const validData = data.filter(fav => fav.productId);
+
         const batchQueries = validData.map(fav => ({
             productId: fav.productId?._id,
             variantKey: normalizeKey(fav.variants || [])
         }));
 
-        // const productIds = batchQueries.map(q => q.productId);
         const productIds = [...new Set(batchQueries.map(q => q.productId.toString()))]
             .map(id => new Types.ObjectId(id));
+
+        if (!productIds.length) {
+            return [];
+        }
 
         const batches = await this.productBatchModel.find({
             productId: { $in: productIds },
@@ -68,13 +112,12 @@ export class FavoritesService {
         }).lean();
 
         const batchMap = new Map();
-
         for (const b of batches) {
-            const key = `${b.productId}-${b.variantValues.sort().join('-')}`;
-
-            // Keep earliest expiry (FEFO)
-            if (!batchMap.has(key) ||
-                (b.expiryDate && b.expiryDate < batchMap.get(key).expiryDate)) {
+            const key =
+                `${b.productId}-${[...b.variantValues]
+                    .sort()
+                    .join('-')}`;
+            if (!batchMap.has(key) || (b.expiryDate && b.expiryDate < batchMap.get(key).expiryDate)) {
                 batchMap.set(key, b);
             }
         }
@@ -84,10 +127,7 @@ export class FavoritesService {
             if (!product || product.status !== 'active' || product.approveStatus !== 'APPROVED') continue;
 
             const variantKey = normalizeKey(fav.variants?.length ? fav.variants : ['default']);
-
-            const v = product.variants.find(v =>
-                normalizeKey(v.values) === variantKey
-            );
+            const v = product.variants.find(v => normalizeKey(v.values) === variantKey);
 
             if (!v) {
                 items.push({
@@ -102,17 +142,12 @@ export class FavoritesService {
                     unavailable: true,
                     categories: product.categories,
                     giRegions: product.giRegions,
-                    variant: variantKey.split('-'),
+                    variant: fav.variants,
                 });
                 continue;
             }
 
-            const image =
-                v.images?.length > 0
-                    ? v.images[0]
-                    : product.images?.[0] || '';
-
-            // 🔥 GET BATCH (IMPORTANT)
+            const image = v.images?.length > 0 ? v.images[0] : product.images?.[0] || '';
             const mapKey = `${product._id}-${variantKey}`;
             const batch = batchMap.get(mapKey);
 
@@ -129,17 +164,14 @@ export class FavoritesService {
                     unavailable: true,
                     categories: product.categories,
                     giRegions: product.giRegions,
-                    variant: variantKey.split('-'),
+                    variant: fav.variants,
                 });
                 continue;
             }
-            // 🔥 PRICE LOGIC
-            const originalPrice = batch.priceOverride ?? v.price ?? 0;
-            const discount =
-                batch.discountPercentageOverride ?? v.discountPercentage ?? 0;
 
-            const finalPrice =
-                originalPrice - (originalPrice * discount) / 100;
+            const originalPrice = batch.priceOverride ?? v.price ?? 0;
+            const discount = batch.discountPercentageOverride ?? v.discountPercentage ?? 0;
+            const finalPrice = originalPrice - (originalPrice * discount) / 100;
 
             items.push({
                 id: product._id,
@@ -152,7 +184,7 @@ export class FavoritesService {
                 inStock: batch.stock > 0,
                 categories: product.categories,
                 giRegions: product.giRegions,
-                variant: variantKey.split('-'),
+                variant: fav.variants,
             });
         }
 
@@ -162,73 +194,87 @@ export class FavoritesService {
     async remove(
         userId: string,
         productId: string,
-        variants: string[] = []
-    ): Promise<{ deletedCount?: number }> {
-        const normalize = (arr: string[]) => arr.slice().sort();
-        const normalizedVariants = normalize(variants.length ? variants : ['default']);
+        variants: string[] = [],): Promise<{ deletedCount?: number }> {
+
+        const normalize = (arr: string[]) =>
+            arr.slice().sort();
+
+        const normalizedVariants =
+            normalize(
+                variants.length
+                    ? variants
+                    : ['default']
+            );
 
         return this.favoriteModel.deleteOne({
             userId: new Types.ObjectId(userId),
             productId: new Types.ObjectId(productId),
-            variants: { $all: normalizedVariants, $size: normalizedVariants.length }
+            variants: {
+                $all: normalizedVariants,
+                $size: normalizedVariants.length
+            }
         });
     }
-
-    // async mergeGuestFavorites(
-    //     userId: string,
-    //     guestFavourites: { productId: string, variants: string[] }[],
-    // ) {
-    //     const uId = new Types.ObjectId(userId);
-
-    //     for (const { productId, variants } of guestFavourites) {
-    //         // Validate productId before converting
-    //         if (!Types.ObjectId.isValid(productId)) {
-    //             console.log(`Skipping invalid productId: ${productId}`);
-    //             continue;
-    //         }
-    //         const pId = new Types.ObjectId(productId);
-
-    //         const normalize = (arr: string[]) => arr.slice().sort();
-    //         const normalizedVariants = normalize(variants.length ? variants : ['default']);
-
-    //         const exists = await this.favoriteModel.findOne({
-    //             userId: uId,
-    //             productId: pId,
-    //             variants: { $all: normalizedVariants, $size: normalizedVariants.length }
-    //         });
-
-    //         if (!exists) {
-    //             await this.favoriteModel.create({
-    //                 userId: uId,
-    //                 productId: pId,
-    //                 variants: normalizedVariants,
-    //             });
-    //         }
-    //     }
-    // }
 
     async mergeGuestFavorites(
         userId: string,
         guestFavourites: { productId: string; variants: string[] }[],
     ) {
         const uId = new Types.ObjectId(userId);
-
         const normalize = (arr: string[]) => arr.slice().sort();
 
         for (const fav of guestFavourites) {
 
             if (!Types.ObjectId.isValid(fav.productId)) {
-                console.log(`Skipping invalid productId: ${fav.productId}`);
+                console.log(
+                    `Skipping invalid productId: ${fav.productId}`
+                );
                 continue;
             }
 
-            const pId = new Types.ObjectId(fav.productId);
+            const product =
+                await this.productModel.findById(
+                    fav.productId
+                );
 
-            const normalizedVariants = normalize(
-                fav.variants?.length ? fav.variants : ['default']
-            );
+            // product exists?
+            if (!product) {
+                continue;
+            }
 
-            // 🔥 MAIN FIX (NO findOne, NO create)
+            // product active + approved?
+            if (
+                product.approveStatus !== 'APPROVED' ||
+                product.status !== 'active'
+            ) {
+                continue;
+            }
+
+            const normalizedVariants =
+                normalize(
+                    fav.variants?.length
+                        ? fav.variants
+                        : ['default']
+                );
+
+            // variant exists?
+            const normalizeKey = (arr: string[]) =>
+                arr.slice().sort().join('-');
+
+            const variantExists =
+                product.variants.some(
+                    v =>
+                        normalizeKey(v.values) ===
+                        normalizeKey(normalizedVariants)
+                );
+
+            if (!variantExists) {
+                continue;
+            }
+
+            const pId =
+                new Types.ObjectId(fav.productId);
+
             await this.favoriteModel.updateOne(
                 {
                     userId: uId,
@@ -248,5 +294,4 @@ export class FavoritesService {
             );
         }
     }
-
 }
