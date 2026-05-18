@@ -45,6 +45,9 @@ export class Seller {
   @Prop({ required: true })
   digitalSignatureUrl: string;
 
+  @Prop({ default: false })
+  isBlocked: boolean;
+
   @Prop({ required: true })
   email: string;
 

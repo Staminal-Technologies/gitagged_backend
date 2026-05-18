@@ -84,4 +84,16 @@ export class SellerController {
       body.reason
     );
   }
+
+  @UseGuards(AdminJwtGuard)
+  @Patch(':id/block')
+  blockSeller(@Param('id') id: string) {
+    return this.sellerService.blockSeller(id);
+  }
+
+  @UseGuards(AdminJwtGuard)
+  @Patch(':id/unblock')
+  unblockSeller(@Param('id') id: string) {
+    return this.sellerService.unblockSeller(id);
+  }
 }

@@ -203,4 +203,20 @@ export class SellerService {
         'Profile update rejected',
     };
   }
+
+  async blockSeller(id: string) {
+    return this.sellerModel.findByIdAndUpdate(
+      id,
+      { isBlocked: true },
+      { new: true }
+    );
+  }
+
+  async unblockSeller(id: string) {
+    return this.sellerModel.findByIdAndUpdate(
+      id,
+      { isBlocked: false },
+      { new: true }
+    );
+  }
 }

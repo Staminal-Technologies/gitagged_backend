@@ -229,10 +229,13 @@ export class OrderService {
   }
 
   async getMyOrders(userId: string) {
-    return this.orderModel
-      .find({ userId })
+
+    const orders = await this.orderModel
+      .find({ userId: new Types.ObjectId(userId) })
       .sort({ createdAt: -1 })
       .lean();
+
+    return orders;
   }
 
   async getAllOrders(user: any) {
