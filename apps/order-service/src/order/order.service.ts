@@ -239,28 +239,70 @@ export class OrderService {
   }
 
   async getAllOrders(user: any) {
+
     if (user.role === 'ADMIN') {
-      return this.orderModel
+
+      const order = await this.orderModel
         .find()
         .populate('userId', 'name email phone address')
         .populate('items.productId', 'title variants')
+        .populate(
+          'items.sellerId',
+          'sellerName businessName email mobileNumber address gstNumber status'
+        )
         .sort({ createdAt: -1 })
         .lean();
+
+      return order;
     }
 
     if (user.role === 'SELLER') {
+
       const orders = await this.orderModel
-        .find({ 'items.sellerId': user.sub })
+        .find()
         .populate('userId', 'name email phone address')
         .populate('items.productId', 'title variants')
         .sort({ createdAt: -1 });
 
-      return orders.map(order => ({
-        ...order.toObject(),
-        items: order.items.filter(
-          i => i.sellerId.toString() === user.sub.toString()
-        ),
-      }));
+      const sellerOrders = orders
+        .map(order => {
+
+          const sellerItems = order.items.filter(
+            (item: any) => {
+
+              if (!item.sellerId) {
+                return false;
+              }
+              // console.log('ORDER ITEMS:', order.items);
+
+              // console.log(
+              //   'SELLER IDS:',
+              //   order.items.map((i) => ({
+              //     dbSellerId: i.sellerId?.toString(),
+              //     tokenSellerId: user.sellerId.toString(),
+              //   }))
+              // );
+
+              return item.sellerId?.toString() === user.sellerId.toString();
+            }
+          );
+
+          if (sellerItems.length === 0) {
+            return null;
+          }
+
+          return {
+            ...order.toObject(),
+            items: sellerItems,
+          };
+        })
+        .filter(order => order !== null);
+
+      // console.log('FULL USER:', user);
+      // console.log('ROLE:', user.role);
+      // console.log('SUB:', user.sub);
+
+      return sellerOrders;
     }
 
     return [];

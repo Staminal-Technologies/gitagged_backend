@@ -7,7 +7,7 @@ import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { JwtStrategy } from './jwt.strategy';
 import { FirebaseModule } from '../common/firebase/firebase.module';
-import { Seller, SellerSchema } from '../schema/seller.schema';
+import { Seller, SellerSchema } from 'apps/order-service/src/seller/schema/seller.schema';
 import { Admin, AdminSchema } from '../admin-auth/schema/admin.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SellerJwtStrategy } from '../strategy/seller-jwt.strategy';

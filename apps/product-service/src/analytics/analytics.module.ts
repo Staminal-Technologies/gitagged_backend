@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { User, UserSchema } from '../users/schema/users.schema';
-import { Order, OrderSchema } from '../schema/order.schema';
+import { Order, OrderSchema } from 'apps/order-service/src/order/schema/order.schema';
 import { Product, ProductSchema } from '../products/schema/product.schema';
 import { AnalyticsController } from './analytics.controller';
 import { AnalyticsService } from './analytics.service';

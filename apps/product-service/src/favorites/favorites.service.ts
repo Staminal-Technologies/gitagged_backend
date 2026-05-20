@@ -275,23 +275,21 @@ export class FavoritesService {
             const pId =
                 new Types.ObjectId(fav.productId);
 
-            await this.favoriteModel.updateOne(
-                {
+            const exists = await this.favoriteModel.findOne({
+                userId: uId,
+                productId: pId,
+                variants: {
+                    $all: normalizedVariants,
+                    $size: normalizedVariants.length
+                }
+            });
+            if (!exists) {
+                await this.favoriteModel.create({
                     userId: uId,
                     productId: pId,
                     variants: normalizedVariants
-                },
-                {
-                    $set: {
-                        userId: uId,
-                        productId: pId,
-                        variants: normalizedVariants
-                    }
-                },
-                {
-                    upsert: true
-                }
-            );
+                });
+            }
         }
     }
 }

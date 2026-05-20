@@ -8,7 +8,7 @@ import cloudinary from '../common/cloudinary/cloudinary.config';
 import { MailService } from '../common/mail/mail.service';
 import { ProductApproveStatus } from '../enum/product-approve-status.enum';
 import { ProductBatch, ProductBatchDocument } from './schema/product-batch.schema';
-import { Seller, SellerDocument } from '../schema/seller.schema';
+import { Seller, SellerDocument } from 'apps/order-service/src/seller/schema/seller.schema';
 import { Cart, CartDocument } from '../cart/schema/cart.schema';
 
 @Injectable()
@@ -29,7 +29,6 @@ export class ProductsService {
         const now = new Date();
         const futureDate = new Date();
         futureDate.setDate(now.getDate() + 10);
-
         if (!user || user.role === 'USER') {
             const validProductIds = await this.productBatchModel.aggregate([
                 {
@@ -143,31 +142,52 @@ export class ProductsService {
     async findById(id: string) {
         const product = await this.productModel.findById(id).lean();
 
-        if (!product || product.status !== 'active' || product.approveStatus !== 'APPROVED') {
-            throw new NotFoundException('Product not available');
+        if (!product) {
+            throw new NotFoundException('Product not found in database registry maps!');
         }
 
-        const batches =
-            await this.productBatchModel.find({
-                productId: id,
-                stock: { $gt: 0 },
-                $or: [
-                    { expiryDate: null },
-                    { expiryDate: { $gte: new Date() } }
-                ]
-            });
+        const batches = await this.productBatchModel.find({
+            productId: id,
+            stock: { $gt: 0 },
+            $or: [
+                { expiryDate: null },
+                { expiryDate: { $gte: new Date() } }
+            ]
+        }).lean();
 
-        if (batches.length === 0) {
-            throw new NotFoundException(
-                'Product unavailable'
-            );
-        }
         return {
             ...product,
-            batches
-        }
-
+            batches: batches || []
+        };
     }
+    // async findById(id: string) {
+    //     const product = await this.productModel.findById(id).lean();
+
+    //     if (!product || product.status !== 'active' || product.approveStatus !== 'APPROVED') {
+    //         throw new NotFoundException('Product not available');
+    //     }
+
+    //     const batches =
+    //         await this.productBatchModel.find({
+    //             productId: id,
+    //             stock: { $gt: 0 },
+    //             $or: [
+    //                 { expiryDate: null },
+    //                 { expiryDate: { $gte: new Date() } }
+    //             ]
+    //         });
+
+    //     if (batches.length === 0) {
+    //         throw new NotFoundException(
+    //             'Product unavailable'
+    //         );
+    //     }
+    //     return {
+    //         ...product,
+    //         batches
+    //     }
+
+    // }
 
     async findByCategory(categoryId: string) {
 

@@ -5,7 +5,7 @@ import { ProductsController } from './products.controller';
 import { ProductsService } from './products.service';
 import { Category, CategorySchema } from '../categories/schema/category.schema';
 import { SellerJwtStrategy } from '../strategy/seller-jwt.strategy';
-import { Seller, SellerSchema } from '../schema/seller.schema';
+import { Seller, SellerSchema } from 'apps/order-service/src/seller/schema/seller.schema';
 import { PassportModule } from '@nestjs/passport';
 import { MailModule } from '../common/mail/mail.module';
 import { ProductBatch, ProductBatchSchema } from './schema/product-batch.schema';

@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Seller, SellerDocument } from './schema/seller.schema';
 import { approvalStatus } from './seller-status.enum';
-import { User, UserDocument } from '../common/schema/user.schema';
+import { User, UserDocument } from 'apps/product-service/src/users/schema/users.schema';
 import { UserStatus } from '../common/enum/user-status.enum';
 import * as bcrypt from 'bcryptjs';
 import { MailService } from '../common/mail/mail.service';

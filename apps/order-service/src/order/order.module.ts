@@ -6,11 +6,12 @@ import { HttpModule } from '@nestjs/axios';
 import { AdminAuthModule } from '../common/admin-auth/admin-auth.module';
 import { AdminOrdersController } from './admin-order.controller';
 import { Order, OrderSchema } from './schema/order.schema';
-import { User, UserSchema } from '../common/schema/user.schema';
-import { Product, ProductSchema } from '../common/schema/product.schema';
+import { User, UserSchema } from 'apps/product-service/src/users/schema/users.schema';
+import { Product, ProductSchema } from 'apps/product-service/src/products/schema/product.schema';
 import { AuthModule } from '../common/auth/auth.module';
 import { ProductBatchSchema, ProductBatch } from 'apps/product-service/src/products/schema/product-batch.schema';
 import { Cart, CartSchema } from 'apps/product-service/src/cart/schema/cart.schema';
+import { Seller, SellerSchema } from '../seller/schema/seller.schema';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { Cart, CartSchema } from 'apps/product-service/src/cart/schema/cart.sche
       { name: User.name, schema: UserSchema },
       { name: Product.name, schema: ProductSchema },
       { name: ProductBatch.name, schema: ProductBatchSchema },
-      { name: Cart.name, schema: CartSchema }
+      { name: Cart.name, schema: CartSchema },
+      { name: Seller.name, schema: SellerSchema },
     ]),
     AuthModule,
     HttpModule,

@@ -53,7 +53,7 @@ export class OrderController {
     return this.orderService.updateItemStatus(
       itemId,
       body.status,
-      req.user.sub
+      req.user.sellerId
     );
   }
 
