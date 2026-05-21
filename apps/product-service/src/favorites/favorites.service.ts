@@ -16,6 +16,16 @@ export class FavoritesService {
         private productModel: Model<ProductDocument>
     ) { }
 
+    private normalizeVariants(values: string[] = []) {
+        return values
+            .map(v => v.trim().toLowerCase())
+            .sort();
+    }
+
+    private variantKey(values: string[] = []) {
+        return this.normalizeVariants(values).join('-');
+    }
+
     async add(userId: string, productId: string, variants: string[] = []) {
 
         const product =
@@ -42,15 +52,14 @@ export class FavoritesService {
                     ? variants
                     : ['default']
             );
+        const variantKey = normalizeVariants.join('-');
 
-        const normalizeKey = (arr: string[]) =>
-            arr.slice().sort().join('-');
+        this.normalizeVariants(variants);
 
         const variantExists =
-            product.variants.some(
-                v =>
-                    normalizeKey(v.values) ===
-                    normalizeKey(normalizeVariants)
+            product.variants.some(v =>
+                this.variantKey(v.values) ===
+                this.variantKey(normalizeVariants)
             );
 
         if (!variantExists) {
@@ -61,7 +70,8 @@ export class FavoritesService {
         const exists = await this.favoriteModel.findOne({
             userId: new Types.ObjectId(userId),
             productId: new Types.ObjectId(productId),
-            variants: { $all: normalizeVariants, $size: normalizeVariants.length }
+            variantKey,
+            // variants: { $all: normalizeVariants, $size: normalizeVariants.length }
         });
 
         if (exists) return exists;
@@ -69,7 +79,9 @@ export class FavoritesService {
         return this.favoriteModel.create({
             userId: new Types.ObjectId(userId),
             productId: new Types.ObjectId(productId),
-            variants: normalizeVariants,
+            variants:normalizeVariants,
+            variantKey,
+            // variants: { $all: normalizeVariants, $size: normalizeVariants.length }
         });
     }
 
@@ -87,12 +99,13 @@ export class FavoritesService {
         bufferDate.setDate(now.getDate() + 10);
 
         const items = [];
-        const normalizeKey = (arr: string[]) => arr.slice().sort().join('-');
         const validData = data.filter(fav => fav.productId);
 
         const batchQueries = validData.map(fav => ({
             productId: fav.productId?._id,
-            variantKey: normalizeKey(fav.variants || [])
+            variantKey: this.variantKey(
+                fav.variants || []
+            )
         }));
 
         const productIds = [...new Set(batchQueries.map(q => q.productId.toString()))]
@@ -114,9 +127,9 @@ export class FavoritesService {
         const batchMap = new Map();
         for (const b of batches) {
             const key =
-                `${b.productId}-${[...b.variantValues]
-                    .sort()
-                    .join('-')}`;
+                `${b.productId}-${this.variantKey(
+                    b.variantValues
+                )}`;
             if (!batchMap.has(key) || (b.expiryDate && b.expiryDate < batchMap.get(key).expiryDate)) {
                 batchMap.set(key, b);
             }
@@ -126,8 +139,12 @@ export class FavoritesService {
             const product = fav.productId as any;
             if (!product || product.status !== 'active' || product.approveStatus !== 'APPROVED') continue;
 
-            const variantKey = normalizeKey(fav.variants?.length ? fav.variants : ['default']);
-            const v = product.variants.find(v => normalizeKey(v.values) === variantKey);
+            const variantKey =
+                this.variantKey(
+                    fav.variants?.length
+                        ? fav.variants
+                        : ['default']
+                ); const v = product.variants.find(v => this.variantKey(v.values) === variantKey);
 
             if (!v) {
                 items.push({
@@ -206,13 +223,16 @@ export class FavoritesService {
                     : ['default']
             );
 
+        const variantKey = normalizedVariants.join('-');
+
         return this.favoriteModel.deleteOne({
             userId: new Types.ObjectId(userId),
             productId: new Types.ObjectId(productId),
-            variants: {
-                $all: normalizedVariants,
-                $size: normalizedVariants.length
-            }
+            variantKey,
+            // variants: {
+            //     $all: normalizedVariants,
+            //     $size: normalizedVariants.length
+            // }
         });
     }
 
@@ -220,76 +240,127 @@ export class FavoritesService {
         userId: string,
         guestFavourites: { productId: string; variants: string[] }[],
     ) {
+
         const uId = new Types.ObjectId(userId);
-        const normalize = (arr: string[]) => arr.slice().sort();
+
+        const normalize = (arr: string[]) =>
+            arr.slice().sort();
+
+        const failedItems = [];
 
         for (const fav of guestFavourites) {
 
-            if (!Types.ObjectId.isValid(fav.productId)) {
-                console.log(
-                    `Skipping invalid productId: ${fav.productId}`
-                );
-                continue;
-            }
+            try {
 
-            const product =
-                await this.productModel.findById(
-                    fav.productId
-                );
-
-            // product exists?
-            if (!product) {
-                continue;
-            }
-
-            // product active + approved?
-            if (
-                product.approveStatus !== 'APPROVED' ||
-                product.status !== 'active'
-            ) {
-                continue;
-            }
-
-            const normalizedVariants =
-                normalize(
-                    fav.variants?.length
-                        ? fav.variants
-                        : ['default']
-                );
-
-            // variant exists?
-            const normalizeKey = (arr: string[]) =>
-                arr.slice().sort().join('-');
-
-            const variantExists =
-                product.variants.some(
-                    v =>
-                        normalizeKey(v.values) ===
-                        normalizeKey(normalizedVariants)
-                );
-
-            if (!variantExists) {
-                continue;
-            }
-
-            const pId =
-                new Types.ObjectId(fav.productId);
-
-            const exists = await this.favoriteModel.findOne({
-                userId: uId,
-                productId: pId,
-                variants: {
-                    $all: normalizedVariants,
-                    $size: normalizedVariants.length
+                if (!Types.ObjectId.isValid(fav.productId)) {
+                    console.log(
+                        `Skipping invalid productId: ${fav.productId}`
+                    );
+                    continue;
                 }
-            });
-            if (!exists) {
-                await this.favoriteModel.create({
-                    userId: uId,
-                    productId: pId,
-                    variants: normalizedVariants
+
+                const product =
+                    await this.productModel.findById(
+                        fav.productId
+                    );
+
+                // product exists?
+                if (!product) {
+                    continue;
+                }
+
+                // product active + approved?
+                if (
+                    product.approveStatus !== 'APPROVED' ||
+                    product.status !== 'active'
+                ) {
+                    continue;
+                }
+
+                const normalizedVariants =
+                    normalize(
+                        fav.variants?.length
+                            ? fav.variants
+                            : ['default']
+                    );
+
+                // variant exists?
+                const normalizeKey = (arr: string[]) =>
+                    arr.slice().sort().join('-');
+
+                const variantExists =
+                    product.variants.some(v =>
+                        this.variantKey(v.values) ===
+                        this.variantKey(normalizedVariants)
+                    );
+
+                console.log(
+                    'CHECKING VARIANT',
+                    fav.productId,
+                    normalizedVariants,
+                    product.variants.map(v => v.values)
+                );
+
+                if (!variantExists) {
+                    console.log(
+                        '❌ VARIANT NOT FOUND',
+                        fav.productId,
+                        normalizedVariants
+                    );
+                    continue;
+                }
+
+                const pId =
+                    new Types.ObjectId(fav.productId);
+
+                const variantKey = normalizedVariants.join('-');
+                const exists =
+                    await this.favoriteModel.findOne({
+                        userId: uId,
+                        productId: pId,
+                        variantKey
+                        // variants: {
+                        //     $all: normalizedVariants,
+                        //     $size: normalizedVariants.length
+                        // }
+                    });
+
+                if (!exists) {
+
+                    await this.favoriteModel.create({
+                        userId: uId,
+                        productId: pId,
+                        variants: normalizedVariants,
+                        variantKey,
+                    });
+
+                    console.log(
+                        '✅ FAVORITE MERGED',
+                        fav.productId,
+                        normalizedVariants
+                    );
+                }
+
+            } catch (err: any) {
+
+                console.log(
+                    '❌ FAVORITE MERGE ERROR',
+                    fav.productId,
+                    fav.variants,
+                    err.message
+                );
+
+                failedItems.push({
+                    productId: fav.productId,
+                    variants: fav.variants,
+                    reason: err.message
                 });
             }
         }
+
+        return {
+            message: 'Favorites merged successfully',
+            failedItems
+        };
     }
 }

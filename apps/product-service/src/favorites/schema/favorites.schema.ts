@@ -13,12 +13,15 @@ export class Favorite {
 
     @Prop({ type: [String], default: [] })
     variants: string[];
+
+    @Prop({ required: true })
+    variantKey: string;
 }
 
 export const FavoriteSchema = SchemaFactory.createForClass(Favorite);
 
 // 🚫 Prevent duplicate favorites
 FavoriteSchema.index(
-    { userId: 1, productId: 1, variants: 1 },
+    { userId: 1, productId: 1, variantKey: 1 },
     { unique: true }
 );
