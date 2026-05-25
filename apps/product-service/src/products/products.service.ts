@@ -160,34 +160,6 @@ export class ProductsService {
             batches: batches || []
         };
     }
-    // async findById(id: string) {
-    //     const product = await this.productModel.findById(id).lean();
-
-    //     if (!product || product.status !== 'active' || product.approveStatus !== 'APPROVED') {
-    //         throw new NotFoundException('Product not available');
-    //     }
-
-    //     const batches =
-    //         await this.productBatchModel.find({
-    //             productId: id,
-    //             stock: { $gt: 0 },
-    //             $or: [
-    //                 { expiryDate: null },
-    //                 { expiryDate: { $gte: new Date() } }
-    //             ]
-    //         });
-
-    //     if (batches.length === 0) {
-    //         throw new NotFoundException(
-    //             'Product unavailable'
-    //         );
-    //     }
-    //     return {
-    //         ...product,
-    //         batches
-    //     }
-
-    // }
 
     async findByCategory(categoryId: string) {
 
@@ -728,32 +700,6 @@ export class ProductsService {
             ]
         }).lean();
     }
-
-    // async removeSelectedItems(
-    //     userId: string,
-    //     keys: string[]
-    // ) {
-
-    //     const cart = await this.cartModel.findOne({ userId });
-
-    //     if (!cart) return;
-
-    //     cart.items = cart.items.filter(item => {
-
-    //         const key =
-    //             item.variant?.length
-    //                 ? `${item.productId}|${item.variant.join('|')}`
-    //                 : item.productId.toString();
-
-    //         return !keys.includes(key);
-    //     });
-
-    //     await cart.save();
-
-    //     return {
-    //         message: 'Selected items removed'
-    //     };
-    // }
 
     async addStock(
         productId: string,

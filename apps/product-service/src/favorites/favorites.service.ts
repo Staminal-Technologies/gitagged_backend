@@ -71,7 +71,6 @@ export class FavoritesService {
             userId: new Types.ObjectId(userId),
             productId: new Types.ObjectId(productId),
             variantKey,
-            // variants: { $all: normalizeVariants, $size: normalizeVariants.length }
         });
 
         if (exists) return exists;
@@ -81,7 +80,6 @@ export class FavoritesService {
             productId: new Types.ObjectId(productId),
             variants:normalizeVariants,
             variantKey,
-            // variants: { $all: normalizeVariants, $size: normalizeVariants.length }
         });
     }
 
@@ -229,10 +227,6 @@ export class FavoritesService {
             userId: new Types.ObjectId(userId),
             productId: new Types.ObjectId(productId),
             variantKey,
-            // variants: {
-            //     $all: normalizedVariants,
-            //     $size: normalizedVariants.length
-            // }
         });
     }
 
@@ -319,10 +313,6 @@ export class FavoritesService {
                         userId: uId,
                         productId: pId,
                         variantKey
-                        // variants: {
-                        //     $all: normalizedVariants,
-                        //     $size: normalizedVariants.length
-                        // }
                     });
 
                 if (!exists) {

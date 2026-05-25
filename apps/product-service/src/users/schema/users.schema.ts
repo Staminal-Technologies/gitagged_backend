@@ -18,7 +18,7 @@ export class User extends Document {
   @Prop([
     {
       addressLine: { type: String, required: true },
-      city: { type: String, requiredL: true },
+      city: { type: String, required: true },
       state: { type: String, required: true },
       pincode: { type: String, required: true },
       lat: { type: Number, required: true },

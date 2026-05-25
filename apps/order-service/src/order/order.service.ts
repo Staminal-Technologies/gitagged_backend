@@ -202,16 +202,6 @@ export class OrderService {
           }
         );
       }
-      // await this.cartModel.updateOne(
-      //   { userId: new Types.ObjectId(userId) },
-      //   {
-      //     $pull: {
-      //       items: {
-      //         productId: { $in: productIds }
-      //       }
-      //     }
-      //   }
-      // );
 
       // ✅ Step 5: Save address if requested profiles entries properties checks logic system maps
       if (checkoutData.saveAddress && checkoutData.receiverAddress) {
@@ -273,15 +263,6 @@ export class OrderService {
               if (!item.sellerId) {
                 return false;
               }
-              // console.log('ORDER ITEMS:', order.items);
-
-              // console.log(
-              //   'SELLER IDS:',
-              //   order.items.map((i) => ({
-              //     dbSellerId: i.sellerId?.toString(),
-              //     tokenSellerId: user.sellerId.toString(),
-              //   }))
-              // );
 
               return item.sellerId?.toString() === user.sellerId.toString();
             }
@@ -297,10 +278,6 @@ export class OrderService {
           };
         })
         .filter(order => order !== null);
-
-      // console.log('FULL USER:', user);
-      // console.log('ROLE:', user.role);
-      // console.log('SUB:', user.sub);
 
       return sellerOrders;
     }

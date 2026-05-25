@@ -54,14 +54,6 @@ export class CartService {
             this.normalize(v.values) === this.normalize(finalVariants)
         );
 
-        // // 🔥 FALLBACK LOOKUP OVERRIDE LOGIC FIX FOR '1' VALUES MISMATCH
-        // if (!selectedVariant && product.variants.length > 0) {
-        //     if (this.normalize(finalVariants) === this.normalize(['default'])) {
-        //         selectedVariant = product.variants[0];
-        //         finalVariants = normalizeArr(selectedVariant.values);
-        //     }
-        // }
-
         if (!selectedVariant) {
             throw new BadRequestException('Variant not found');
         }
@@ -91,15 +83,6 @@ export class CartService {
                 { expiryDate: { $gte: bufferDate } }
             ]
         }).sort({ expiryDate: 1 });
-        // const batch = await this.productBatchModel.find({
-        //     productId: pId,
-        //     variantValues: finalVariants,
-        //     stock: { $gt: 0 },
-        //     $or: [
-        //         { expiryDate: null },
-        //         { expiryDate: { $gte: bufferDate } }
-        //     ]
-        // }).sort({ expiryDate: 1 });
 
         if (!batch || batch.length === 0) {
             throw new BadRequestException('Product not available');
@@ -293,15 +276,6 @@ export class CartService {
                 }
             ]
         }).sort({ expiryDate: 1 });
-        // const batch = await this.productBatchModel.find({
-        //     productId: pId,
-        //     variantValues: finalVariants,
-        //     stock: { $gt: 0 },
-        //     $or: [
-        //         { expiryDate: null },
-        //         { expiryDate: { $gte: new Date(new Date().setDate(new Date().getDate() + 10)) } }
-        //     ]
-        // }).sort({ expiryDate: 1 });
 
         if (!batch || batch.length === 0) throw new BadRequestException('Product not available');
         const totalStock = batch.reduce((sum, b) => sum + b.stock, 0);
@@ -345,14 +319,6 @@ export class CartService {
         return this.cartModel.deleteMany({ userId: uId });
     }
 
-    // async mergeGuestCart(
-    //     userId: string,
-    //     guestCart: { productId: string; variant: string[]; qty: number }[],
-    // ) {
-    //     for (const item of guestCart) {
-    //         await this.addToCart(userId, item.productId, item.variant || [], item.qty);
-    //     }
-    // }
     async mergeGuestCart(
         userId: string,
         guestCart: {
