@@ -27,6 +27,50 @@ export class SellerService {
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
+    const existingEmail =
+      await this.sellerModel.findOne({
+        email: data.email
+      });
+
+    if (existingEmail) {
+      throw new BadRequestException(
+        'Email already exists'
+      );
+    }
+
+    const existingMobile =
+      await this.sellerModel.findOne({
+        mobileNumber: data.mobileNumber
+      });
+
+    if (existingMobile) {
+      throw new BadRequestException(
+        'Mobile number already exists'
+      );
+    }
+
+    const existingGST =
+      await this.sellerModel.findOne({
+        gstNumber: data.gstNumber
+      });
+
+    if (existingGST) {
+      throw new BadRequestException(
+        'GST number already exists'
+      );
+    }
+
+    const existingPAN =
+      await this.sellerModel.findOne({
+        panNumber: data.panNumber
+      });
+
+    if (existingPAN) {
+      throw new BadRequestException(
+        'PAN number already exists'
+      );
+    }
+
     const seller = await this.sellerModel.create({
       userId,
       ...data,
@@ -105,10 +149,6 @@ export class SellerService {
     }
 
     // DIRECT UPDATE FIELDS
-
-    seller.mobileNumber =
-      data.mobileNumber || seller.mobileNumber;
-
     seller.address =
       data.address || seller.address;
 
@@ -116,10 +156,79 @@ export class SellerService {
       data.productDescription ||
       seller.productDescription;
 
+    // Validation for the unique fields!!
+    if (
+      data.email &&
+      data.email !== seller.email
+    ) {
+
+      const existingEmail =
+        await this.sellerModel.findOne({
+          email: data.email
+        });
+
+      if (existingEmail) {
+        throw new BadRequestException(
+          'Email already exists'
+        );
+      }
+    }
+
+    if (
+      data.mobileNumber &&
+      data.mobileNumber !== seller.mobileNumber
+    ) {
+
+      const existingMobile =
+        await this.sellerModel.findOne({
+          mobileNumber: data.mobileNumber
+        });
+
+      if (existingMobile) {
+        throw new BadRequestException(
+          'Mobile number already exists'
+        );
+      }
+    }
+
+    if (
+      data.gstNumber &&
+      data.gstNumber !== seller.gstNumber
+    ) {
+
+      const existingGST =
+        await this.sellerModel.findOne({
+          gstNumber: data.gstNumber
+        });
+
+      if (existingGST) {
+        throw new BadRequestException(
+          'GST already exists'
+        );
+      }
+    }
+
+    if (
+      data.panNumber &&
+      data.panNumber !== seller.panNumber
+    ) {
+
+      const existingPAN =
+        await this.sellerModel.findOne({
+          panNumber: data.panNumber
+        });
+
+      if (existingPAN) {
+        throw new BadRequestException(
+          'PAN already exists'
+        );
+      }
+    }
+
     // ADMIN APPROVAL REQUIRED FIELDS
-
     seller.pendingProfileUpdates = {
-
+      mobileNumber: data.mobileNumber,
+      email: data.email,
       businessName: data.businessName,
       gstNumber: data.gstNumber,
       panNumber: data.panNumber,

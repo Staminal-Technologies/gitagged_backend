@@ -19,6 +19,9 @@ export class ProductBatch {
     @Prop()
     expiryDate?: Date;
 
+    @Prop({ default: false })
+    lowStockAlertSent: boolean;
+
     // Override price and discountPercentage
     @Prop()
     priceOverride?: number;

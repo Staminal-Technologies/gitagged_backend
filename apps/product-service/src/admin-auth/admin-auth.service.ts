@@ -12,10 +12,10 @@ export class AdminAuthService {
     private jwtService: JwtService,
   ) { }
 
-  async login(email: string, password: string) {
-    console.log('📩 LOGIN INPUT:', email, password);
+  async login(identifier: string, password: string) {
+    console.log('📩 LOGIN INPUT:', identifier, password);
 
-    const admin = await this.adminModel.findOne({ email });
+    const admin = await this.adminModel.findOne({ $or: [{ email: identifier }, { mobileNumber: identifier }] });
 
     console.log('🧑 ADMIN FROM DB:', admin);
 

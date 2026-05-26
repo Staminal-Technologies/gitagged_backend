@@ -8,6 +8,6 @@ export class AdminAuthController {
 
   @Post('login')
   async login(@Body() dto: AdminLoginDto) {
-    return this.adminAuthService.login(dto.emailOrUserName, dto.password);
+    return this.adminAuthService.login(dto.identifier, dto.password);
   }
 }

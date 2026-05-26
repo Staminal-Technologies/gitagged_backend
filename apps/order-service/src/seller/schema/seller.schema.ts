@@ -20,10 +20,10 @@ export class Seller {
   @Prop({ required: true })
   sellerName: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, unique: true })
   gstNumber: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, unique: true })
   panNumber: string;
 
   @Prop({ required: true })
@@ -35,7 +35,7 @@ export class Seller {
   @Prop({ required: true })
   accountHolderName: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, unique: true })
   mobileNumber: string;
 
   @Prop({ required: true })
@@ -47,7 +47,7 @@ export class Seller {
   @Prop({ required: true })
   digitalSignatureUrl: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, unique: true })
   email: string;
 
   @Prop({ required: true })

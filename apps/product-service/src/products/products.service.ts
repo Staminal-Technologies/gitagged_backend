@@ -10,6 +10,7 @@ import { ProductApproveStatus } from '../enum/product-approve-status.enum';
 import { ProductBatch, ProductBatchDocument } from './schema/product-batch.schema';
 import { Seller, SellerDocument } from 'apps/order-service/src/seller/schema/seller.schema';
 import { Cart, CartDocument } from '../cart/schema/cart.schema';
+import { NotifyService } from '../notify/notify.service';
 
 @Injectable()
 export class ProductsService {
@@ -22,7 +23,8 @@ export class ProductsService {
         @InjectModel(Seller.name)
         private sellerModel: Model<SellerDocument>,
         @InjectModel(Cart.name)
-        private cartModel: Model<CartDocument>
+        private cartModel: Model<CartDocument>,
+        private notifyService: NotifyService,
     ) { }
 
     async findAll(user: any) {
@@ -455,6 +457,8 @@ export class ProductsService {
     async reduceStock(productId: string, variantValues: string[], qty: number) {
         variantValues = variantValues.sort();
         let remaining = qty;
+        const product =
+            await this.productModel.findById(productId);
         const batches = await this.productBatchModel
             .find({
                 productId,
@@ -503,6 +507,32 @@ export class ProductsService {
             }
 
             remaining -= deduct;
+
+            if (
+                updated.stock <= 5 &&
+                !updated.lowStockAlertSent
+            ) {
+
+                const seller = await this.sellerModel.findById(
+                    product.sellerId
+                );
+
+                // seller mail
+                await this.mailService.sendEmail(
+                    seller.email,
+                    'Low Stock Alert',
+                    `
+        <h2>Low Stock Warning</h2>
+        <p>Product stock is below 5.</p>
+        <p>Variant: ${variantValues.join(', ')}</p>
+        <p>Current Stock: ${updated.stock}</p>
+        `
+                );
+
+                updated.lowStockAlertSent = true;
+
+                await updated.save();
+            }
         }
 
         if (remaining > 0) {
@@ -746,16 +776,60 @@ export class ProductsService {
             );
         }
 
-        const batch =
-            await this.productBatchModel.create({
+        const existingBatch =
+            await this.productBatchModel.findOne({
                 productId,
                 variantValues: sortedValues,
-                stock: data.stock,
                 expiryDate: data.expiryDate || null,
-                priceOverride: data.priceOverride || null,
-                discountPercentageOverride:
-                    data.discountPercentageOverride || null,
             });
+        let batch;
+
+        if (existingBatch) {
+
+            existingBatch.stock += data.stock;
+
+            // reset low stock alert
+            if (existingBatch.stock > 5) {
+                existingBatch.lowStockAlertSent = false;
+            }
+
+            await existingBatch.save();
+
+            batch = existingBatch;
+
+        } else {
+
+            batch =
+                await this.productBatchModel.create({
+                    productId,
+                    variantValues: sortedValues,
+                    stock: data.stock,
+                    expiryDate: data.expiryDate || null,
+                    priceOverride: data.priceOverride || null,
+                    discountPercentageOverride:
+                        data.discountPercentageOverride || null,
+                });
+        }
+
+        // const batch =
+        //     await this.productBatchModel.create({
+        //         productId,
+        //         variantValues: sortedValues,
+        //         stock: data.stock,
+        //         expiryDate: data.expiryDate || null,
+        //         priceOverride: data.priceOverride || null,
+        //         discountPercentageOverride:
+        //             data.discountPercentageOverride || null,
+        //     });
+
+        if (batch.stock > 0) {
+
+            await this.notifyService.notifyUsers(
+                productId,
+                sortedValues,
+                product.title,
+            );
+        }
 
         return {
             message: 'Stock added successfully',

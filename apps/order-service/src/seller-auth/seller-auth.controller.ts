@@ -1,4 +1,4 @@
-import { Body, Controller, Post , Get, Req, UseGuards} from '@nestjs/common';
+import { Body, Controller, Post, Get, Req, UseGuards } from '@nestjs/common';
 import { SellerAuthService } from './seller-auth.service';
 
 @Controller('seller-auth')
@@ -8,12 +8,6 @@ export class SellerAuthController {
 
   @Post('login')
   login(@Body() body: any) {
-    return this.service.login(body.email, body.password);
+    return this.service.login(body.identifier, body.password);
   }
-
-  // @UseGuards(SellerJwtGuard)
-  // @Get('seller/orders')
-  // getSellerOrders(@Req() req) {
-  //   return this.service.getSellerOrders(req.user.sub);
-  // }
 }

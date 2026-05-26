@@ -1,14 +1,22 @@
 import { Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from 'mongoose';
 import { MailService } from "../common/mail/mail.service";
+import { StockNotify, StockNotifyDocument, } from './schema/notify.schema';
+import { Product, ProductDocument } from '../products/schema/product.schema';
+import { ProductBatch, ProductBatchDocument } from '../products/schema/product-batch.schema';
 
 @Injectable()
 export class NotifyService {
 
-    constructor(private readonly stockNotifyModel: any,
-        private readonly notificationModel: any,
-        private readonly productModel: any,
+    constructor(
+        @InjectModel(StockNotify.name)
+        private readonly stockNotifyModel: Model<StockNotifyDocument>,
+        @InjectModel(Product.name)
+        private readonly productModel: Model<ProductDocument>,
         private readonly mailService: MailService,
-        private readonly productBatchModel: any,
+        @InjectModel(ProductBatch.name)
+        private readonly productBatchModel: Model<ProductBatchDocument>,
     ) { }
 
     async updateStock(batchId: string, newStock: number) {
@@ -41,7 +49,7 @@ export class NotifyService {
     async notifyUsers(productId: string, variantValues: string[], title: string) {
         const requests = await this.stockNotifyModel.find({
             productId,
-            variantValues,
+            variantValues: variantValues.sort(),
             isNotified: false,
         }).populate('userId');
 
@@ -49,12 +57,6 @@ export class NotifyService {
             requests.map(async (req) => {
                 try {
                     const user = req.userId as any;
-
-                    await this.notificationModel.create({
-                        userId: user._id,
-                        title: 'Back in Stock!',
-                        message: `${title} is now available`,
-                    });
 
                     if (user.email) {
                         await this.mailService.sendEmail(

@@ -1,5 +1,5 @@
 export class AdminLoginDto {
-  emailOrUserName: string;
+  identifier: string;
   password: string;
   mobileNumber: string;
 }

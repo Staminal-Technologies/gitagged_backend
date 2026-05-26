@@ -13,15 +13,18 @@ export class SellerAuthService {
     private jwtService: JwtService,
   ) { }
 
-  async login(email: string, password: string) {
+  async login(identifier: string, password: string) {
 
-    const seller = await this.sellerModel.findOne({ email });
+    const seller = await this.sellerModel.findOne({ $or: [{ email: identifier }, { mobileNumber: identifier }] });
 
     if (!seller)
       throw new UnauthorizedException("Invalid credentials");
 
     if (seller.status !== 'APPROVED')
       throw new UnauthorizedException("Seller not approved yet");
+
+    if (seller.isBlocked)
+      throw new UnauthorizedException("Seller is blocked!!");
 
     const isMatch = await bcrypt.compare(password, seller.password);
 

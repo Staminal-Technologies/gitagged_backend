@@ -57,6 +57,7 @@ export class AuthService {
       $or: [
         { email: identifier },
         { name: identifier },
+        { mobileNumber: identifier },
       ],
     });
 
@@ -83,6 +84,7 @@ export class AuthService {
       $or: [
         { email: identifier },
         { sellerName: identifier },
+        { mobileNumber: identifier },
       ],
     });
 
