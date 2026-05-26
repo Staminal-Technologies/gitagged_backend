@@ -9,8 +9,8 @@ import { MailService } from '../common/mail/mail.service';
 import { ProductApproveStatus } from '../enum/product-approve-status.enum';
 import { ProductBatch, ProductBatchDocument } from './schema/product-batch.schema';
 import { Seller, SellerDocument } from 'apps/order-service/src/seller/schema/seller.schema';
-import { Cart, CartDocument } from '../cart/schema/cart.schema';
 import { NotifyService } from '../notify/notify.service';
+import { GIRegion } from '../gi-regions/schema/gi-region.schema';
 
 @Injectable()
 export class ProductsService {
@@ -22,9 +22,9 @@ export class ProductsService {
         private productBatchModel: Model<ProductBatchDocument>,
         @InjectModel(Seller.name)
         private sellerModel: Model<SellerDocument>,
-        @InjectModel(Cart.name)
-        private cartModel: Model<CartDocument>,
         private notifyService: NotifyService,
+        @InjectModel(GIRegion.name)
+        private regionModel: Model<GIRegion>,
     ) { }
 
     async findAll(user: any) {
@@ -858,6 +858,31 @@ export class ProductsService {
         }
 
         return slug;
+    }
+
+    async getProductsByStateAndCategory(
+        state: string,
+        categoryId: string,
+    ) {
+
+        const regions = await this.regionModel.find({
+            state,
+            categories: categoryId,
+        });
+
+        const regionIds =
+            regions.map((r: any) => r._id);
+
+        return this.productModel.find({
+
+            giRegions: { $in: regionIds },
+
+            categories: categoryId,
+
+            approveStatus: 'APPROVED',
+
+        });
+
     }
 
 }

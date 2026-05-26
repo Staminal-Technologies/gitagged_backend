@@ -39,27 +39,39 @@ export class GIRegionsController {
   }
 
   @UseGuards(AdminJwtGuard)
-@Post('upload-image')
-@UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
-async uploadRegionImageOnly(
-  @UploadedFile() file: Express.Multer.File,
-) {
-  configureCloudinary();
+  @Post('upload-image')
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  async uploadRegionImageOnly(
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    configureCloudinary();
 
-  if (!file) throw new Error('No file received');
+    if (!file) throw new Error('No file received');
 
-  const result: any = await new Promise((resolve, reject) => {
-    cloudinary.uploader.upload_stream(
-      { folder: 'gi-regions' },
-      (error, result) => {
-        if (error) reject(error);
-        else resolve(result);
-      },
-    ).end(file.buffer);
-  });
+    const result: any = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        { folder: 'gi-regions' },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        },
+      ).end(file.buffer);
+    });
 
-  // 🔥 JUST RETURN URL
-  return { url: result.secure_url };
-}
+    // 🔥 JUST RETURN URL
+    return { url: result.secure_url };
+  }
+
+  @Get('states/all')
+  getStates() {
+    return this.giRegionsService.getStates();
+  }
+
+  @Get('state/:state/categories')
+  getCategoriesByState(
+    @Param('state') state: string
+  ) {
+    return this.giRegionsService.getCategoriesByState(state);
+  }
 
 }

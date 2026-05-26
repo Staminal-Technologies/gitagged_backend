@@ -161,4 +161,15 @@ export class ProductsController {
     );
   }
 
+  @Get('state/:state/category/:categoryId')
+  getProductsByStateAndCategory(
+    @Param('state') state: string,
+    @Param('categoryId') categoryId: string,
+  ) {
+    return this.service.getProductsByStateAndCategory(
+      state,
+      categoryId,
+    );
+  }
+
 }

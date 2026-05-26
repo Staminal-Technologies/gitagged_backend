@@ -33,11 +33,39 @@ export class GiRegionsService {
   }
 
   async updateImage(id: string, imageUrl: string) {
-  return this.regionModel.findByIdAndUpdate(
-    id,
-    { image: imageUrl },
-    { new: true }
-  );
-}
+    return this.regionModel.findByIdAndUpdate(
+      id,
+      { image: imageUrl },
+      { new: true }
+    );
+  }
+
+  async getStates() {
+    return this.regionModel.distinct('state');
+  }
+
+  async getCategoriesByState(state: string) {
+
+    const regions = await this.regionModel
+      .find({ state })
+      .populate('categories');
+
+    const categoryMap = new Map();
+
+    regions.forEach((region: any) => {
+
+      region.categories.forEach((cat: any) => {
+
+        categoryMap.set(
+          cat._id.toString(),
+          cat
+        );
+
+      });
+
+    });
+
+    return Array.from(categoryMap.values());
+  }
 
 }
