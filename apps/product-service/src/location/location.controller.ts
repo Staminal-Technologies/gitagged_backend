@@ -7,6 +7,7 @@ export class LocationController {
 
   @Post('reverse')
   reverseGeocode(@Body() body: { lat: number; lng: number }) {
+    console.log(body);
     return this.locationService.getAddress(body.lat, body.lng);
   }
 }

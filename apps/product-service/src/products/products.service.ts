@@ -106,11 +106,45 @@ export class ProductsService {
                         productId: p._id,
                     });
 
-                    const totalStock = batches.reduce((sum, b) => sum + b.stock, 0);
+                    // const totalStock = batches.reduce((sum, b) => sum + b.stock, 0);
+                    const now = new Date();
+
+                    const expiringDate = new Date();
+                    expiringDate.setDate(now.getDate() + 10);
+
+                    const goodStock = batches
+                        .filter(b =>
+                            !b.expiryDate || b.expiryDate > expiringDate
+                        )
+                        .reduce((sum, b) => sum + b.stock, 0);
+
+                    const expiringStock = batches
+                        .filter(b =>
+                            b.expiryDate &&
+                            b.expiryDate > now &&
+                            b.expiryDate <= expiringDate
+                        )
+                        .reduce((sum, b) => sum + b.stock, 0);
+
+                    const expiredStock = batches
+                        .filter(b =>
+                            b.expiryDate &&
+                            b.expiryDate <= now
+                        )
+                        .reduce((sum, b) => sum + b.stock, 0);
+
+                    const totalStock =
+                        goodStock +
+                        expiringStock +
+                        expiredStock;
 
                     return {
                         ...p,
-                        totalStock
+                        batches,
+                        totalStock,
+                        goodStock,
+                        expiringStock,
+                        expiredStock,
                     };
                 })
             );
@@ -129,11 +163,44 @@ export class ProductsService {
                     productId: p._id,
                 });
 
-                const totalStock = batches.reduce((sum, b) => sum + b.stock, 0);
+                // const totalStock = batches.reduce((sum, b) => sum + b.stock, 0);
+                const now = new Date();
+
+                const expiringDate = new Date();
+                expiringDate.setDate(now.getDate() + 10);
+
+                const goodStock = batches
+                    .filter(b =>
+                        !b.expiryDate || b.expiryDate > expiringDate
+                    )
+                    .reduce((sum, b) => sum + b.stock, 0);
+
+                const expiringStock = batches
+                    .filter(b =>
+                        b.expiryDate &&
+                        b.expiryDate > now &&
+                        b.expiryDate <= expiringDate
+                    )
+                    .reduce((sum, b) => sum + b.stock, 0);
+
+                const expiredStock = batches
+                    .filter(b =>
+                        b.expiryDate &&
+                        b.expiryDate <= now
+                    )
+                    .reduce((sum, b) => sum + b.stock, 0);
+
+                const totalStock =
+                    goodStock +
+                    expiringStock +
+                    expiredStock;
 
                 return {
                     ...p,
-                    totalStock
+                    totalStock,
+                    goodStock,
+                    expiringStock,
+                    expiredStock,
                 };
             })
         );
@@ -580,12 +647,45 @@ export class ProductsService {
                     productId: p._id,
                 });
 
-                const totalStock = batches.reduce((sum, b) => sum + b.stock, 0);
+                // const totalStock = batches.reduce((sum, b) => sum + b.stock, 0);
+                const now = new Date();
+
+                const expiringDate = new Date();
+                expiringDate.setDate(now.getDate() + 10);
+
+                const goodStock = batches
+                    .filter(b =>
+                        !b.expiryDate || b.expiryDate > expiringDate
+                    )
+                    .reduce((sum, b) => sum + b.stock, 0);
+
+                const expiringStock = batches
+                    .filter(b =>
+                        b.expiryDate &&
+                        b.expiryDate > now &&
+                        b.expiryDate <= expiringDate
+                    )
+                    .reduce((sum, b) => sum + b.stock, 0);
+
+                const expiredStock = batches
+                    .filter(b =>
+                        b.expiryDate &&
+                        b.expiryDate <= now
+                    )
+                    .reduce((sum, b) => sum + b.stock, 0);
+
+                const totalStock =
+                    goodStock +
+                    expiringStock +
+                    expiredStock;
 
                 return {
                     ...p,
                     batches,
-                    totalStock
+                    totalStock,
+                    goodStock,
+                    expiringStock,
+                    expiredStock,
                 };
             })
         );

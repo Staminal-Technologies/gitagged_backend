@@ -12,6 +12,7 @@ import { ProductBatch, ProductBatchSchema } from './schema/product-batch.schema'
 import { User, UserSchema } from '../users/schema/users.schema';
 import { Cart, CartSchema } from '../cart/schema/cart.schema';
 import { NotifyModule } from '../notify/notify.module';
+import { GIRegion, GIRegionSchema } from '../gi-regions/schema/gi-region.schema';
 
 @Module({
     imports: [
@@ -23,6 +24,7 @@ import { NotifyModule } from '../notify/notify.module';
             { name: ProductBatch.name, schema: ProductBatchSchema },
             { name: User.name, schema: UserSchema },
             { name: Cart.name, schema: CartSchema },
+            { name: GIRegion.name, schema: GIRegionSchema },
         ]),
         MailModule,
         NotifyModule,
