@@ -3,6 +3,13 @@ import { SellerService } from './seller.service';
 import { UserJwtGuard } from '../common/guards/user-jwt.guards';
 import { AdminJwtGuard } from '../common/guards/admin-jwt.guards';
 import { SellerJwtGuard } from '../common/guards/seller-jwt.guards';
+import { UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
+import cloudinary, {
+  configureCloudinary,
+} from 'apps/product-service/src/common/cloudinary/cloudinary.config';
+import { Express } from 'express';
 
 @Controller('sellers')
 export class SellerController {
@@ -13,6 +20,44 @@ export class SellerController {
   @Post('apply')
   applySeller(@Req() req, @Body() body: any) {
     return this.sellerService.applySeller(req.user.sub, body);
+  }
+
+  // USER UPLOAD DIGITAL SIGNATURE
+  @UseGuards(UserJwtGuard)
+  @Post('upload-signature')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+    }),
+  )
+  async uploadSignature(
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    configureCloudinary();
+
+    if (!file) {
+      throw new Error('No file received');
+    }
+
+    const result: any = await new Promise(
+      (resolve, reject) => {
+        cloudinary.uploader
+          .upload_stream(
+            {
+              folder: 'seller-signatures',
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            },
+          )
+          .end(file.buffer);
+      },
+    );
+
+    return {
+      url: result.secure_url,
+    };
   }
 
   // USER VIEW OWN SELLER PROFILE
@@ -95,5 +140,13 @@ export class SellerController {
   @Patch(':id/unblock')
   unblockSeller(@Param('id') id: string) {
     return this.sellerService.unblockSeller(id);
+  }
+
+  @UseGuards(UserJwtGuard)
+  @Get('my-application')
+  getMyApplication(@Req() req) {
+    return this.sellerService.getSellerByUserId(
+      req.user.sub,
+    );
   }
 }

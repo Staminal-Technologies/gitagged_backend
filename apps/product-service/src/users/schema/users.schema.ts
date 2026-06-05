@@ -17,6 +17,9 @@ export class User extends Document {
 
   @Prop([
     {
+      label:{ type: String, required: true},
+      receiverName:{ type: String, required: true},
+      receiverPhone:{ type: String, required : true},
       addressLine: { type: String, required: true },
       city: { type: String, required: true },
       state: { type: String, required: true },
@@ -27,12 +30,15 @@ export class User extends Document {
     },
   ])
   address: {
+    label: string;
+    receiverName: string;
+    receiverPhone: string;
     addressLine: string;
     city?: string;
     state?: string;
     pincode?: string;
-    lat: Number;
-    lng: Number;
+    lat: number;
+    lng: number;
     isDefault?: boolean;
   }[];
 

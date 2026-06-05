@@ -328,4 +328,8 @@ export class SellerService {
       { new: true }
     );
   }
+
+  async getSellerByUserId(userId: string) {
+    return this.sellerModel.findOne({ userId });
+  }
 }

@@ -12,6 +12,20 @@ import { AdminJwtGuard } from '../common/guards/admin-jwt.guard';
 export class ProductsController {
   constructor(private readonly service: ProductsService) { }
 
+  @Get("search/:keyword")
+  searchProducts(
+    @Param("keyword") keyword: string,
+  ) {
+    return this.service.searchProducts(keyword);
+  }
+
+  @Get('related/:id')
+  getRelatedProducts(
+    @Param('id') id: string,
+  ) {
+    return this.service.getRelatedProducts(id);
+  }
+
   @UseGuards(AuthGuard('user-jwt'))
   @Get()
   async getAll(@Req() req: any) {

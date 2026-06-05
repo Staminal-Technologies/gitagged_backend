@@ -911,17 +911,6 @@ export class ProductsService {
                 });
         }
 
-        // const batch =
-        //     await this.productBatchModel.create({
-        //         productId,
-        //         variantValues: sortedValues,
-        //         stock: data.stock,
-        //         expiryDate: data.expiryDate || null,
-        //         priceOverride: data.priceOverride || null,
-        //         discountPercentageOverride:
-        //             data.discountPercentageOverride || null,
-        //     });
-
         if (batch.stock > 0) {
 
             await this.notifyService.notifyUsers(
@@ -983,6 +972,47 @@ export class ProductsService {
 
         });
 
+    }
+
+    async searchProducts(keyword: string) {
+
+        return this.productModel.find({
+            title: {
+                $regex: keyword,
+                $options: "i",
+            },
+
+            approveStatus: "APPROVED",
+            status: "active",
+        })
+            .populate("categories", "name")
+            .populate("giRegions", "name");
+    }
+
+    async getRelatedProducts(
+        productId: string,
+    ) {
+
+        const product =
+            await this.productModel.findById(productId);
+
+        if (!product) {
+            return [];
+        }
+
+        return this.productModel.find({
+
+            _id: { $ne: productId },
+
+            categories: {
+                $in: product.categories,
+            },
+
+            approveStatus: "APPROVED",
+            status: "active",
+
+        })
+            .limit(10);
     }
 
 }

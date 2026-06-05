@@ -120,22 +120,31 @@ export class UsersService {
 
     if (!user) throw new NotFoundException('User not found');
 
-    // ✅ Add new address
+    // ✅ Add new address - check!!
     const exists = user.address.some(
       a =>
         a.addressLine === addressData.addressLine &&
+        a.city === addressData.city &&
+        a.state === addressData.state &&
         a.pincode === addressData.pincode
     );
 
-    if (!exists) {
-      user.address.push({
-        ...addressData,
-        isDefault: user.address.length === 0,
-      });
+    if (exists) {
+      return {
+        success: false,
+        message: 'Address already exists',
+        addresses: user.address,
+      };
     }
+    user.address.push({
+      ...addressData,
+      isDefault: user.address.length === 0,
+    });
+
     await user.save();
 
     return {
+      success: true,
       message: 'Address added successfully',
       addresses: user.address,
     };

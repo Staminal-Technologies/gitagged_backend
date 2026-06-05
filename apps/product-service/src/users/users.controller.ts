@@ -30,10 +30,15 @@ export class UsersController {
   addAddress(
     @Req() req,
     @Body() body: {
+      label: string;
+      receiverName: string;
+      receiverPhone: string;
       addressLine: string;
       city?: string;
       state?: string;
       pincode?: string;
+      lat: number;
+      lng: number;
     }
   ) {
     return this.usersService.addAddress(req.user.sub, body);
