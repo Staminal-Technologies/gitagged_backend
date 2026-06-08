@@ -30,18 +30,39 @@ export class UsersService {
 
     let user = await this.userModel.findOne({ phone: data.phone });
 
-    if (!user) {
+     if (!user) {
+
+    const email =
+      !data.email ||
+      !data.email.trim() ||
+      data.email.trim() === "@gmail.com"
+        ? null
+        : data.email.trim();
+
+    if (email) {
+
+      const existingEmailUser =
+        await this.userModel.findOne({ email });
+
+      if (existingEmailUser) {
+        return {
+          success: false,
+          message: "Email already exists",
+          user:null,
+        };
+      }
+    }
       // Create new user
       user = await this.userModel.create({
         name: data.name,
         phone: data.phone,
-        email: data.email,
+        email,
         address: data.address,
         role: UserStatus.USER,
       });
-    }
 
-    return user;
+    }
+    return{ success:true,user};
   }
 
   findByPhone(phone: string) {

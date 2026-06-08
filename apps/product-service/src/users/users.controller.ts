@@ -114,20 +114,30 @@ export class UsersController {
     const decoded = await this.firebaseService.verifyToken(body.firebaseToken);
     const phone = decoded.phone_number;
 
-    const user = await this.usersService.registerOrLogin({
-      phone,
-      name: body.name,
-      email: body.email,
-      address: body.address,
-    });
+    const result = await this.usersService.registerOrLogin({
+  phone,
+  name: body.name,
+  email: body.email,
+  address: body.address,
+});
 
-    const jwt = this.jwtService.sign({
-      sub: user._id,
-      phone: user.phone,
-      role: user.role,
-    });
+if (!result.success) {
+  return result;
+}
 
-    return { token: jwt, user };
+const user = result.user;
+
+const jwt = this.jwtService.sign({
+  sub: user._id,
+  phone: user.phone,
+  role: user.role,
+});
+
+return {
+  success: true,
+  token: jwt,
+  user,
+};
   }
 
 }

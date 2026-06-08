@@ -976,17 +976,24 @@ export class ProductsService {
 
     async searchProducts(keyword: string) {
 
-        return this.productModel.find({
-            title: {
-                $regex: keyword,
-                $options: "i",
-            },
+        const cleanedKeyword = keyword
+            .replace(/\s+/g, "")
+            .toLowerCase();
 
-            approveStatus: "APPROVED",
-            status: "active",
-        })
+        const products = await this.productModel
+            .find({
+                approveStatus: "APPROVED",
+                status: "active",
+            })
             .populate("categories", "name")
             .populate("giRegions", "name");
+
+        return products.filter((product: any) =>
+            product.title
+                ?.replace(/\s+/g, "")
+                .toLowerCase()
+                .includes(cleanedKeyword)
+        );
     }
 
     async getRelatedProducts(
